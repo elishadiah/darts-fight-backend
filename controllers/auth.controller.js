@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 // Register new user
 registerUser = async (req, res) => {
-    console.log('Register-->>>', req.body);
+  console.log("Register-->>>", req.body);
   const salt = await bcrypt.genSalt(10);
   const hashedPass = await bcrypt.hash(req.body.password, salt);
   req.body.password = hashedPass;
@@ -30,7 +30,7 @@ registerUser = async (req, res) => {
 
 // Login User
 loginUser = async (req, res) => {
-    console.log('Login-->>>', req.body);
+  console.log("Login-->>>", req.body);
 
   const { email, password } = req.body;
 
@@ -58,4 +58,49 @@ loginUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser };
+// Get User
+fetchUser = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const user = await UserModel.findOne({ email: email });
+
+    if (user) res.status(200).json({ user });
+    else res.status(404).json("User not found");
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// Update Profile
+updateUser = async (req, res) => {
+  // const salt = await bcrypt.genSalt(10);
+  // const hashedPass = await bcrypt.hash(req.body.password, salt);
+  // req.body.password = hashedPass;
+  const updatedUser = await UserModel.findByIdAndUpdate(
+    req.params.id,
+    {
+      firstname: req.body.firstname,
+      lastname: req.body.lastname,
+      email: req.body.email,
+      username: req.body.username,
+      avatar: req.body.avatar
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+  try {
+    res.status(200).json({
+      status: "Success",
+      data: {
+        updatedUser,
+      },
+    });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+module.exports = { loginUser, registerUser, updateUser, fetchUser };

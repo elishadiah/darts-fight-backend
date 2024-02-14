@@ -11,6 +11,7 @@ const mongoURI =
 
 // routes
 const AuthRoute = require("./routes/auth.route.js");
+const AvatarRoute = require("./routes/avatar.route.js");
 
 // const socketIO = require("socket.io")(http, {
 //   cors: {
@@ -53,6 +54,7 @@ app.get("/api", (req, res) => {
   res.json({ message: "Hello" });
 });
 app.use("/auth", AuthRoute);
+app.use("/avatar", AvatarRoute);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
