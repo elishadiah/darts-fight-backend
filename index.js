@@ -32,7 +32,7 @@ socketIO.on("connection", (socket) => {
 
 socket.on('challenge', (data) => {
   console.log('Challenge-->>', data)
-  socketIO.emit('challengeResponse', {user: data.receiver, message: `${data.challenger} sent you a challenge`});
+  socketIO.emit('challengeResponse', {user: data.receiver, challenger: data.challenger});
 })
 
 socket.emit('notification', { message: 'Welcome to the Socket.IO notifications example' });
