@@ -37,7 +37,20 @@ getResult = (req, res) => {
         return fruits;
       });
 
-      res.json({ allResult, totalResult });
+      let userResult = await page.evaluate(() => {
+        const userList = document.body.querySelectorAll(
+          ".container-fluid div .card .card-body h1 a"
+        );
+
+        let users = [];
+
+        userList.forEach((value) => {
+          users.push(value.innerText);
+        });
+        return users;
+      });
+
+      res.json({ allResult, totalResult, userResult });
 
       await browser.close();
     })
