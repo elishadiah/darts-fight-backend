@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 getResult = (req, res) => {
     const destUrl = req.body.url;
   puppeteer
-    .launch()
+    .launch({headless: false})
     .then(async (browser) => {
       const page = await browser.newPage();
       await page.goto(destUrl);
