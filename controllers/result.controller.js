@@ -9,7 +9,7 @@ getResult = (req, res) => {
       await page.goto(destUrl);
       // await page.goto("https://cra-crawl.vercel.app/")
 
-      // await page.waitForSelector(".container-fluid");
+      await page.waitForSelector(".container-fluid div .card .card-body div.col-3 > h3");
 
       let totalResult = await page.evaluate(() => {
         const fruitsList = document.body.querySelectorAll(
@@ -24,6 +24,8 @@ getResult = (req, res) => {
         return fruits;
       });
 
+      await page.waitForSelector(".container-fluid div .card .card-body p");
+
       let allResult = await page.evaluate(() => {
         const fruitsList = document.body.querySelectorAll(
           ".container-fluid div .card .card-body p"
@@ -36,6 +38,8 @@ getResult = (req, res) => {
         });
         return fruits;
       });
+
+      await page.waitForSelector(".container-fluid div .card .card-body h1 a");
 
       let userResult = await page.evaluate(() => {
         const userList = document.body.querySelectorAll(
