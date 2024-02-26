@@ -1,15 +1,21 @@
 const puppeteer = require("puppeteer");
 
 getResult = (req, res) => {
-    const destUrl = req.body.url;
+  const destUrl = req.body.url;
   puppeteer
-    .launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], browserContext: 'default'})
+    .launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      browserContext: "default",
+    })
     .then(async (browser) => {
       const page = await browser.newPage();
       await page.goto(destUrl);
       // await page.goto("https://cra-crawl.vercel.app/")
 
-      await page.waitForSelector(".container-fluid div .card .card-body div.col-3 > h3");
+      await page.waitForSelector(
+        ".container-fluid div .card .card-body div.col-3 > h3"
+      );
 
       let totalResult = await page.evaluate(() => {
         const fruitsList = document.body.querySelectorAll(
