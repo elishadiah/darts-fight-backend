@@ -64,7 +64,7 @@ mongoose
   .catch((error) => console.log(`${error} did not connect`));
 
 app.get("/api", (req, res) => {
-  res.json({ message: "Hello" });
+  res.json({ message: "Hello TTT" });
 });
 app.use("/auth", AuthRoute);
 app.use("/avatar", AvatarRoute);
