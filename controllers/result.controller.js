@@ -3,7 +3,7 @@ const puppeteer = require("puppeteer");
 getResult = (req, res) => {
     const destUrl = req.body.url;
   puppeteer
-    .launch({headless: false})
+    .launch({headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], browserContext: 'default'})
     .then(async (browser) => {
       const page = await browser.newPage();
       await page.goto(destUrl);
