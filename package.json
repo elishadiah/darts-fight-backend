@@ -5,10 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js",
-    "prestart": "npx puppeteer browsers install chrome",
-    "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache",
-    "build:digitalocean": "npm install --production=false && npm run build && npm ci"
+    "start": "nodemon index.js"
   },
   "author": "",
   "license": "MIT",
