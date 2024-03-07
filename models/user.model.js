@@ -4,11 +4,13 @@ const UserSchema = mongoose.Schema(
   {
     firstname: {
       type: String,
-      required: false
+      required: false,
+      default: ''
     },
     lastname: {
       type: String,
-      required: false
+      required: false,
+      default: '',
     },
     email: {
       type: String,
@@ -24,7 +26,8 @@ const UserSchema = mongoose.Schema(
     },
     avatar: {
       type: String, 
-      required: false
+      required: false,
+      default: ''
     }
   },
   { timestamps: true }

@@ -7,7 +7,7 @@ const http = require("http").Server(app);
 
 const PORT = 4000;
 const mongoURI =
-  "mongodb+srv://diahelisha:1j4pxHc3n7C0N968@darts-fight-database-4d8fe03d.mongo.ondigitalocean.com/admin";
+  "mongodb+srv://diahelisha:51K8YoxU3k90C62J@darts-fight-database-4d8fe03d.mongo.ondigitalocean.com/admin";
 
 // routes
 const AuthRoute = require("./routes/auth.route.js");
@@ -36,6 +36,7 @@ socketIO.on("connection", (socket) => {
     socketIO.emit("challengeResponse", {
       user: data.receiver,
       challenger: data.challenger,
+      challengerEmail: data.challengerEmail
     });
   });
 

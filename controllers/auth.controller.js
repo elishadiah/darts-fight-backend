@@ -1,4 +1,5 @@
 const UserModel = require("../models/user.model.js");
+const ResultModel = require("../models/result.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -9,7 +10,7 @@ registerUser = async (req, res) => {
   const hashedPass = await bcrypt.hash(req.body.password, salt);
   req.body.password = hashedPass;
   const newUser = new UserModel(req.body);
-  const { username } = req.body;
+  const { username, email, avatar } = req.body;
   try {
     const oldUser = await UserModel.findOne({ username });
 
@@ -22,6 +23,7 @@ registerUser = async (req, res) => {
       "my-32-character-ultra-secure-and-ultra-long-secret",
       { expiresIn: "1h" }
     );
+    await ResultModel.create({ username, email, avatar });
     res.status(200).json({ user, token });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -77,6 +79,8 @@ updateUser = async (req, res) => {
   // const salt = await bcrypt.genSalt(10);
   // const hashedPass = await bcrypt.hash(req.body.password, salt);
   // req.body.password = hashedPass;
+  const currentUser = await UserModel.findById(req.params.id);
+
   const updatedUser = await UserModel.findByIdAndUpdate(
     req.params.id,
     {
@@ -84,13 +88,27 @@ updateUser = async (req, res) => {
       lastname: req.body.lastname,
       email: req.body.email,
       username: req.body.username,
-      avatar: req.body.avatar
+      avatar: req.body.avatar,
     },
     {
       new: true,
       runValidators: true,
     }
   );
+
+  await ResultModel.findOneAndUpdate(
+    { username: currentUser.username },
+    {
+      username: req.body.username,
+      avatar: req.body.avatar,
+      email: req.body.email,
+    },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
   try {
     res.status(200).json({
       status: "Success",
