@@ -35,6 +35,7 @@ socketIO.on("connection", (socket) => {
     users.push(data);
     console.log("new-user-->>", data);
     socketIO.emit("statusUpdate", users);
+    socketIO.emit("new-user-response", users);
   });
 
   // Update status to 'Offline' when user is disconnected
