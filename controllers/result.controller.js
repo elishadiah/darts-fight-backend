@@ -9,6 +9,7 @@ getSubResult = (req, res) => {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       browserContext: "default",
+      executablePath: '/usr/bin/chromium-browser'
     })
     .then(async (browser) => {
       const page = await browser.newPage();
@@ -57,7 +58,7 @@ getResult = (req, res) => {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       browserContext: "default",
-      // executablePath: '/usr/bin/chromium-browser'
+      executablePath: '/usr/bin/chromium-browser'
     })
     .then(async (browser) => {
       const page = await browser.newPage();
