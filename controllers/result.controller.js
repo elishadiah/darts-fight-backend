@@ -13,6 +13,17 @@ getSubResult = (req, res) => {
     })
     .then(async (browser) => {
       const page = await browser.newPage();
+      await page.setRequestInterception(true);
+      page.on("request", (request) => {
+        if (
+          request.resourceType() === "image" ||
+          request.resourceType() === "stylesheet"
+        ) {
+          request.abort();
+        } else {
+          request.continue();
+        }
+      });
       await page.goto(url, {
         waitUntil: "load",
         timeout: 0,
@@ -62,18 +73,33 @@ getResult = (req, res) => {
     })
     .then(async (browser) => {
       const page = await browser.newPage();
+
+      await page.setRequestInterception(true);
+      page.on("request", (request) => {
+        if (
+          request.resourceType() === "image" ||
+          request.resourceType() === "stylesheet"
+        ) {
+          request.abort();
+        } else {
+          request.continue();
+        }
+      });
+
       await page.goto(destUrl, { waitUntil: "load", timeout: 0 });
 
       let totalResult, allResult, userResult;
 
       try {
         await page.waitForSelector(
-          ".container-fluid div .card .card-body div.col-3 > h3"
+          // ".container-fluid div .card .card-body div.col-3 > h3"
+          ".container-fluid div .card .card-body p, h3"
         );
 
         totalResult = await page.evaluate(() => {
           const fruitsList = document.body.querySelectorAll(
-            ".container-fluid div .card .card-body div.col-3 > h3"
+            // ".container-fluid div .card .card-body div.col-3 > h3"
+            ".container-fluid div .card .card-body p, h3"
           );
 
           let fruits = [];
@@ -88,49 +114,7 @@ getResult = (req, res) => {
         res.status(500).json(e);
       }
 
-      try {
-        await page.waitForSelector(".container-fluid div .card .card-body p");
-
-        allResult = await page.evaluate(() => {
-          const fruitsList = document.body.querySelectorAll(
-            ".container-fluid div .card .card-body p"
-          );
-
-          let fruits = [];
-
-          fruitsList.forEach((value) => {
-            fruits.push(value.innerText);
-          });
-          return fruits;
-        });
-      } catch (e) {
-        console.log("all-err-->>", e);
-        res.status(500).json(e);
-      }
-
-      try {
-        await page.waitForSelector(
-          ".container-fluid div .card .card-body h1 a"
-        );
-
-        userResult = await page.evaluate(() => {
-          const userList = document.body.querySelectorAll(
-            ".container-fluid div .card .card-body h1 a"
-          );
-
-          let users = [];
-
-          userList.forEach((value) => {
-            users.push(value.innerText);
-          });
-          return users;
-        });
-      } catch (e) {
-        console.log("user-err-->>", e);
-        res.status(500).json(e);
-      }
-
-      res.json({ allResult, totalResult, userResult });
+      res.json(totalResult);
 
       await browser.close();
     })
@@ -195,4 +179,10 @@ postResult = async (req, res) => {
   console.log("Result-Req-->>", req.body);
 };
 
-module.exports = { getResult, postResult, getSubResult, fetchResult, fetchAllResult };
+module.exports = {
+  getResult,
+  postResult,
+  getSubResult,
+  fetchResult,
+  fetchAllResult,
+};
