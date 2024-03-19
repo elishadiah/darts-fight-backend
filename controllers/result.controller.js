@@ -146,14 +146,6 @@ const getHighFinish = (firstArray, secondArray) => {
   return counts;
 };
 
-const getHighMarks = () => {
-  const highMarks = [170, 167, 164, 161, 160, 158];
-  for (let i = 157; i > 100; i--) {
-    highMarks.push(i);
-  }
-  return highMarks;
-};
-
 const isEmpty = (data) => {
   if (data.length === 0 || data === null || data === undefined) return true;
   else return false;
@@ -161,8 +153,6 @@ const isEmpty = (data) => {
 
 getResult = (req, res) => {
   let allResult = [],
-    cntBreakfast1 = 0,
-    cntBreakfast2 = 0,
     user1,
     user2;
   ResultModel.find()
@@ -190,46 +180,12 @@ getResult = (req, res) => {
           const user2InitResult = allResult.find((val) =>
             val.username.includes(p2_name)
           );
-          Object.values(JSON.parse(match_json)[1]).map((val) => {
-            if (val[1].hasOwnProperty("to_finish")) {
-              const high = getHighMarks().findIndex(
-                (mark) => mark === val[1].scores[val[1].scores.length - 1]
-              );
-              if (high >= 0) {
-                user1InitResult = {
-                  ...user1InitResult,
-                  highFinish: user1InitResult.map((item, index) =>
-                    index === high ? 1 : item
-                  ),
-                };
-              }
-            } else {
-              const high = getHighMarks().findIndex(
-                (mark) => mark === val[2].scores[val[2].scores.length - 1]
-              );
-              if (high >= 0) {
-                user2InitResult = {
-                  ...user2InitResult,
-                  highFinish: user2InitResult.map((item, index) =>
-                    index === high ? 1 : item
-                  ),
-                };
-              }
-            }
-
-            cntBreakfast1 += val[1].scores.filter(
-              (score) => score === 26
-            ).length;
-            cntBreakfast2 += val[2].scores.filter(
-              (score) => score === 26
-            ).length;
-          });
 
           user1 = {
             name: p1_name,
             won: p1_legs_won,
             avg: p1_match_avg,
-            breakfast: cntBreakfast1,
+            // breakfast: cntBreakfast1,
             init: user1InitResult,
           };
 
@@ -237,14 +193,23 @@ getResult = (req, res) => {
             name: p2_name,
             won: p2_legs_won,
             avg: p2_match_avg,
-            breakfast: cntBreakfast2,
+            // breakfast: cntBreakfast2,
             init: user2InitResult,
           };
 
           if (isEmpty(user1InitResult) || isEmpty(user2InitResult))
             res.status(404).json("User not found");
 
-          res.status(200).json({ user1, user2, begin, end, allResult });
+          res
+            .status(200)
+            .json({
+              user1,
+              user2,
+              begin,
+              end,
+              allResult,
+              result: JSON.parse(match_json)[1],
+            });
         })
         .catch((error) => {
           res.status(500).json(error);
