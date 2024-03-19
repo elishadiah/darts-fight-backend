@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
+const axios = require("axios");
 
 getSubResult = (req, res) => {
   const { url } = req.body;
@@ -9,7 +10,7 @@ getSubResult = (req, res) => {
       headless: true,
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       browserContext: "default",
-      executablePath: '/usr/bin/chromium-browser'
+      // executablePath: '/usr/bin/chromium-browser'
     })
     .then(async (browser) => {
       const page = await browser.newPage();
@@ -62,66 +63,194 @@ getSubResult = (req, res) => {
     });
 };
 
+// getResult = (req, res) => {
+//   const destUrl = req.body.url;
+//   puppeteer
+//     .launch({
+//       headless: true,
+//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
+//       browserContext: "default",
+//       // executablePath: '/usr/bin/chromium-browser'
+//     })
+//     .then(async (browser) => {
+//       const page = await browser.newPage();
+
+//       await page.setRequestInterception(true);
+//       page.on("request", (request) => {
+//         if (
+//           request.resourceType() === "image" ||
+//           request.resourceType() === "stylesheet"
+//         ) {
+//           request.abort();
+//         } else {
+//           request.continue();
+//         }
+//       });
+
+//       await page.goto(destUrl, { waitUntil: "load", timeout: 0 });
+
+//       let totalResult, allResult, userResult;
+
+//       try {
+//         await page.waitForSelector(
+//           // ".container-fluid div .card .card-body div.col-3 > h3"
+//           ".container-fluid div .card .card-body p, h3"
+//         );
+
+//         totalResult = await page.evaluate(() => {
+//           const fruitsList = document.body.querySelectorAll(
+//             // ".container-fluid div .card .card-body div.col-3 > h3"
+//             ".container-fluid div .card .card-body p, h3"
+//           );
+
+//           let fruits = [];
+
+//           fruitsList.forEach((value) => {
+//             fruits.push(value.innerText);
+//           });
+//           return fruits;
+//         });
+//       } catch (e) {
+//         console.log("total-err-->>", e);
+//         res.status(500).json(e);
+//       }
+
+//       res.json(totalResult);
+
+//       await browser.close();
+//     })
+//     .catch(function (err) {
+//       res.status(500).json(err);
+//       console.log("Browser-err-->>>", err);
+//     });
+// };
+
+const getHighFinish = (firstArray, secondArray) => {
+  const counts = [];
+
+  // Create a map to store the counts of elements in the first array
+  const map = new Map();
+  for (const num of firstArray) {
+    if (map.has(num)) {
+      map.set(num, map.get(num) + 1);
+    } else {
+      map.set(num, 1);
+    }
+  }
+
+  // Count the occurrences of elements from the second array
+  for (const num of secondArray) {
+    counts.push(map.get(num) || 0);
+  }
+
+  return counts;
+};
+
+const getHighMarks = () => {
+  const highMarks = [170, 167, 164, 161, 160, 158];
+  for (let i = 157; i > 100; i--) {
+    highMarks.push(i);
+  }
+  return highMarks;
+};
+
+const isEmpty = (data) => {
+  if (data.length === 0 || data === null || data === undefined) return true;
+  else return false;
+};
+
 getResult = (req, res) => {
-  const destUrl = req.body.url;
-  puppeteer
-    .launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      browserContext: "default",
-      executablePath: '/usr/bin/chromium-browser'
-    })
-    .then(async (browser) => {
-      const page = await browser.newPage();
+  let allResult = [],
+    cntBreakfast1 = 0,
+    cntBreakfast2 = 0,
+    user1,
+    user2;
+  ResultModel.find()
+    .then((result) => {
+      allResult = result;
+      axios
+        .get(req.query.params.url)
+        .then((response) => {
+          const {
+            p1_name,
+            p2_name,
+            p1_match_avg,
+            p2_match_avg,
+            p1_legs_won,
+            p2_legs_won,
+            match_json,
+            begin,
+            end,
+          } = response.data;
+          // console.log("WWWW--->>", response.data);
 
-      await page.setRequestInterception(true);
-      page.on("request", (request) => {
-        if (
-          request.resourceType() === "image" ||
-          request.resourceType() === "stylesheet"
-        ) {
-          request.abort();
-        } else {
-          request.continue();
-        }
-      });
-
-      await page.goto(destUrl, { waitUntil: "load", timeout: 0 });
-
-      let totalResult, allResult, userResult;
-
-      try {
-        await page.waitForSelector(
-          // ".container-fluid div .card .card-body div.col-3 > h3"
-          ".container-fluid div .card .card-body p, h3"
-        );
-
-        totalResult = await page.evaluate(() => {
-          const fruitsList = document.body.querySelectorAll(
-            // ".container-fluid div .card .card-body div.col-3 > h3"
-            ".container-fluid div .card .card-body p, h3"
+          const user1InitResult = allResult.find((val) =>
+            val.username.includes(p1_name)
           );
+          const user2InitResult = allResult.find((val) =>
+            val.username.includes(p2_name)
+          );
+          Object.values(JSON.parse(match_json)[1]).map((val) => {
+            if (val[1].hasOwnProperty("to_finish")) {
+              const high = getHighMarks().findIndex(
+                (mark) => mark === val[1].scores[val[1].scores.length - 1]
+              );
+              if (high >= 0) {
+                user1InitResult = {
+                  ...user1InitResult,
+                  highFinish: user1InitResult.map((item, index) =>
+                    index === high ? 1 : item
+                  ),
+                };
+              }
+            } else {
+              const high = getHighMarks().findIndex(
+                (mark) => mark === val[2].scores[val[2].scores.length - 1]
+              );
+              if (high >= 0) {
+                user2InitResult = {
+                  ...user2InitResult,
+                  highFinish: user2InitResult.map((item, index) =>
+                    index === high ? 1 : item
+                  ),
+                };
+              }
+            }
 
-          let fruits = [];
-
-          fruitsList.forEach((value) => {
-            fruits.push(value.innerText);
+            cntBreakfast1 += val[1].scores.filter(
+              (score) => score === 26
+            ).length;
+            cntBreakfast2 += val[2].scores.filter(
+              (score) => score === 26
+            ).length;
           });
-          return fruits;
+
+          user1 = {
+            name: p1_name,
+            won: p1_legs_won,
+            avg: p1_match_avg,
+            breakfast: cntBreakfast1,
+            init: user1InitResult,
+          };
+
+          user2 = {
+            name: p2_name,
+            won: p2_legs_won,
+            avg: p2_match_avg,
+            breakfast: cntBreakfast2,
+            init: user2InitResult,
+          };
+
+          if (isEmpty(user1InitResult) || isEmpty(user2InitResult))
+            res.status(404).json("User not found");
+
+          res.status(200).json({ user1, user2, begin, end, allResult });
+        })
+        .catch((error) => {
+          res.status(500).json(error);
         });
-      } catch (e) {
-        console.log("total-err-->>", e);
-        res.status(500).json(e);
-      }
-
-      res.json(totalResult);
-
-      await browser.close();
     })
-    .catch(function (err) {
-      res.status(500).json(err);
-      console.log("Browser-err-->>>", err);
-    });
+    .catch((err) => res.status(404).json("User not found"));
 };
 
 fetchResult = async (req, res) => {

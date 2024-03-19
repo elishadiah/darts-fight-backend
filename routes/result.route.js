@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 router.post("/detail", getSubResult);
-router.post("/get", getResult);
+router.get("/get", getResult);
 router.post('/post', postResult);
 router.post('/fetch', fetchResult);
 router.get('/fetch-all', fetchAllResult);

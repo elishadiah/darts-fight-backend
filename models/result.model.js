@@ -8,7 +8,14 @@ const ResultSchema = new Schema(
     email: { type: String, required: true, unique: true },
     avatar: { type: String, default: "" },
     master26: { type: Number, default: 0 },
-    highFinish: { type: Array, default: [] },
+    highFinish: {
+      type: Array,
+      default: [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      ],
+    },
     sentMonthChallengeNo: { type: Number, default: 0 },
     sentWeekChallengeNo: { type: Number, default: 0 },
     sentTotalChallengeNo: { type: Number, default: 0 },
