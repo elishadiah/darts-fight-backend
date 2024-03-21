@@ -10,7 +10,9 @@ registerUser = async (req, res) => {
   const hashedPass = await bcrypt.hash(req.body.password, salt);
   req.body.password = hashedPass;
   const newUser = new UserModel(req.body);
-  const { username, email, avatar } = req.body;
+  let { username, email, avatar } = req.body;
+  username = username.trim();
+  email = email.trim();
   try {
     const oldUser = await UserModel.findOne({ username });
 
@@ -34,11 +36,12 @@ registerUser = async (req, res) => {
 loginUser = async (req, res) => {
   console.log("Login-->>>", req.body);
 
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  email = email.trim().toLowerCase();
 
   try {
-    const user = await UserModel.findOne({ email: email });
-
+    const users = await UserModel.find();
+    const user = users.find(val => val.email.trim().toLowerCase().includes(email));
     if (user) {
       const validity = await bcrypt.compare(password, user.password);
 
