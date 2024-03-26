@@ -254,12 +254,14 @@ postResult = async (req, res) => {
           highFinish: req.body.highFinish,
           sentMonthChallengeNo: req.body.sentMonthChallengeNo,
           sentWeekChallengeNo: req.body.sentWeekChallengeNo,
+          sentTotalChallengeNo: req.body.sentTotalChallengeNo,
           acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
           acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
           currentVictoryStreak: req.body.currentVictoryStreak,
           maxVictoryStreak: req.body.maxVictoryStreak,
           totalWinNo: req.body.totalWinNo,
           level: req.body.level,
+          date: req.body.date
         },
         { new: true, runValidators: true }
       );
