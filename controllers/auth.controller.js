@@ -41,7 +41,9 @@ loginUser = async (req, res) => {
 
   try {
     const users = await UserModel.find();
-    const user = users.find(val => val.email.trim().toLowerCase().includes(email));
+    const user = users.find((val) =>
+      val.email.trim().toLowerCase().includes(email)
+    );
     if (user) {
       const validity = await bcrypt.compare(password, user.password);
 
@@ -54,6 +56,43 @@ loginUser = async (req, res) => {
           { expiresIn: "6h" }
         );
         res.status(200).json({ user, token });
+      }
+    } else {
+      res.status(404).json("User not found");
+    }
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// Login Admin User
+loginAdminUser = async (req, res) => {
+  console.log("Login-->>>", req.body);
+
+  let { email, password } = req.body;
+  email = email.trim().toLowerCase();
+
+  try {
+    const users = await UserModel.find();
+    const user = users.find((val) =>
+      val.email.trim().toLowerCase().includes(email)
+    );
+    if (user) {
+      if (user.userRole) {
+        const validity = await bcrypt.compare(password, user.password);
+
+        if (!validity) {
+          res.status(400).json("wrong password");
+        } else {
+          const token = jwt.sign(
+            { email: user.email, id: user._id, role: user.userRole },
+            "my-32-character-ultra-secure-and-ultra-long-secret",
+            { expiresIn: "6h" }
+          );
+          res.status(200).json({ user, token });
+        }
+      } else {
+        res.status(404).json("Non-admin user");
       }
     } else {
       res.status(404).json("User not found");
@@ -124,4 +163,16 @@ updateUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser, updateUser, fetchUser };
+addField = async (req, res) => {
+  try {
+    await UserModel.updateMany({}, [{ $set: { userRole: false } }], {
+      upsert: false,
+    });
+    res.status(200).json("Add success!");
+  } catch (err) {
+    console.log("Aggregate-->>", err);
+    res.status(422).json(err);
+  }
+};
+
+module.exports = { loginUser, loginAdminUser, registerUser, updateUser, fetchUser, addField };
