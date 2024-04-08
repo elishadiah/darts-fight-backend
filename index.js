@@ -9,6 +9,8 @@ const emailjs = require("@emailjs/nodejs");
 const ScheduleModel = require("./models/schedule.model.js");
 const EventModel = require("./models/events.model.js");
 
+const crypto = require("crypto");
+
 const PORT = 4000;
 const mongoURI =
   "mongodb+srv://diahelisha:51K8YoxU3k90C62J@darts-fight-database-4d8fe03d.mongo.ondigitalocean.com/admin";
@@ -30,64 +32,157 @@ app.use(bodyParser.json({ limit: "30mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "30mb", extended: true }));
 app.use(cors());
 
-let users = [];
+const randomId = () => crypto.randomBytes(8).toString("hex");
+
+const { InMemorySessionStore } = require("./sessionStore.js");
+const sessionStore = new InMemorySessionStore();
+
+const { InMemoryMessageStore } = require("./messageStore");
+const messageStore = new InMemoryMessageStore();
+
+socketIO.use((socket, next) => {
+  const sessionID = socket.handshake.auth.sessionID;
+  if (sessionID) {
+    const session = sessionStore.findSession(sessionID);
+    console.log('Session-->>>', session, sessionID, socket.handshake.auth)
+    if (session) {
+      socket.sessionID = sessionID;
+      socket.userID = session.userID;
+      socket.username = session.username;
+      return next();
+    }
+  }
+  const username = socket.handshake.auth.username;
+  console.log('username-->>>', username, socket.handshake.auth)
+  if (!username) {
+    return next(new Error("invalid username"));
+  }
+  socket.sessionID = socket.handshake.auth.sessionID;
+  socket.userID = randomId();
+  socket.username = username;
+  next();
+});
 
 socketIO.on("connection", (socket) => {
   console.log(`⚡: ${socket.id} user just connected!`);
 
-  // Update status to 'Online' when user is connected
-  socket.on("new-user", (data) => {
-    users.push(data);
-    console.log("new-user-->>", data);
-    socketIO.emit("statusUpdate", users);
-    socketIO.emit("new-user-response", users);
+  // persist session
+  sessionStore.saveSession(socket.sessionID, {
+    userID: socket.userID,
+    username: socket.username,
+    connected: true,
+    status: "online",
   });
 
-  // Update status to 'Offline' when user is disconnected
-  socket.on("disconnect", () => {
-    console.log("🔥: A user disconnected: !!!");
-    users = users.filter((val) => val.socketId !== socket.id);
-    socketIO.emit("statusUpdate", users);
-    socket.disconnect();
+  // emit session details
+  socket.emit("user_id", {
+    userID: socket.userID,
   });
+
+  // join the "userID" room
+  socket.join(socket.userID);
+
+  // fetch existing users
+  const users = [];
+  messageStore.findMessagesForUser(socket.userID).forEach((message) => {
+    const { from, to } = message;
+    const otherUser = socket.userID === from ? to : from;
+    if (messagesPerUser.has(otherUser)) {
+      messagesPerUser.get(otherUser).push(message);
+    } else {
+      messagesPerUser.set(otherUser, [message]);
+    }
+  });
+  sessionStore.findAllSessions().forEach((session) => {
+    users.push({
+      userID: session.userID,
+      username: session.username,
+      connected: session.connected,
+      status: session.status,
+    });
+  });
+  socket.emit("users", users);
+
+  console.log('socket---->>>', users)
+
+  // notify existing users
+  socket.broadcast.emit("user connected", {
+    userID: socket.userID,
+    username: socket.username,
+    connected: true,
+    status: "online",
+  });
+
+  // notify users upon disconnection
+  socket.on("disconnect", async () => {
+    const matchingSockets = await socketIO.in(socket.userID).allSockets();
+    const isDisconnected = matchingSockets.size === 0;
+    if (isDisconnected) {
+      // notify other users
+      socket.broadcast.emit("user disconnected", socket.userID);
+      // update the connection status of the session
+      sessionStore.saveSession(socket.sessionID, {
+        userID: socket.userID,
+        username: socket.username,
+        connected: false,
+        status: "offline",
+      });
+    }
+  });
+
+  // // Update status to 'Online' when user is connected
+  // socket.on("new-user", (data) => {
+  //   users.push(data);
+  //   console.log("new-user-->>", data);
+  //   socketIO.emit("statusUpdate", users);
+  //   socketIO.emit("new-user-response", users);
+  // });
+
+  //   // Update status to 'Offline' when user is disconnected
+  //   socket.on("disconnect", () => {
+  //     console.log("🔥: A user disconnected: !!!");
+  //     users = users.filter((val) => val.socketId !== socket.id);
+  //     socketIO.emit("statusUpdate", users);
+  //     socket.disconnect();
+  //   });
 
   // Update status to 'Occupied' when user is challenging another user
-  socket.on("challenge", (data) => {
-    console.log("Challenge-->>", data);
+  // socket.on("challenge", (data) => {
+  //   console.log("Challenge-->>", data);
 
-    socketIO.emit("challengeResponse", {
-      user: data.receiver,
-      challenger: data.challenger,
-      challengerEmail: data.challengerEmail,
-    });
-    socketIO.emit("statusUpdate", {
-      receiver: data.receiver,
-      challenger: data.challenger,
-      status: "Occupied",
-    });
-  });
+  //   socketIO.emit("challengeResponse", {
+  //     user: data.receiver,
+  //     challenger: data.challenger,
+  //     challengerEmail: data.challengerEmail,
+  //   });
+  //   socketIO.emit("statusUpdate", {
+  //     receiver: data.receiver,
+  //     challenger: data.challenger,
+  //     status: "Occupied",
+  //   });
+  // });
 
-  socket.on("schedule-challenge", async (data) => {
-    console.log("schedule-challenge-->>", data);
-    try {
-      await ScheduleModel.create({
-        date: data.date,
-        challenger: data.challenger,
-        challengerEmail: data.challengerEmail,
-        receiver: data.receiver,
-        receiverEmail: data.receiverEmail,
-      });
-    } catch (err) {
-      console.log('schedule_save--->>>', err);
-     }
-    // socketIO.emit("schedule-challenge-response", {
-    //   date: data.date,
-    //   challenger: data.challenger,
-    //   challengerEmail: data.challengerEmail,
-    //   user: data.receiver,
-    //   email: data.receiverEmail,
-    // });
-  });
+  // socket.on("schedule-challenge", async (data) => {
+  //   console.log("schedule-challenge-->>", data);
+  //   try {
+  //     await ScheduleModel.create({
+  //       date: data.date,
+  //       challenger: data.challenger,
+  //       challengerEmail: data.challengerEmail,
+  //       receiver: data.receiver,
+  //       receiverEmail: data.receiverEmail,
+  //     });
+  //   } catch (err) {
+  //     console.log("schedule_save--->>>", err);
+  //   }
+  //   // socketIO.emit("schedule-challenge-response", {
+  //   //   date: data.date,
+  //   //   challenger: data.challenger,
+  //   //   challengerEmail: data.challengerEmail,
+  //   //   user: data.receiver,
+  //   //   email: data.receiverEmail,
+  //   // });
+  // });
 });
 
 const addMinutes = (date, minutes) => {
@@ -141,7 +236,10 @@ cron.schedule("* * * * *", async () => {
   try {
     const schedules = await ScheduleModel.find();
     schedules.map((item) => {
-      if (new Date() > addMinutes(item.date, -240) && new Date() < addMinutes(item.date, -238)) {
+      if (
+        new Date() > addMinutes(item.date, -240) &&
+        new Date() < addMinutes(item.date, -238)
+      ) {
         sendEmailNotification(
           item.receiver,
           item.receiverEmail,
@@ -150,7 +248,10 @@ cron.schedule("* * * * *", async () => {
           "Bis zum Spiel sind es noch weniger als 4 Stunden. Wenn Sie jetzt absagen, verlieren Sie im Grunde das Spiel. Wenn Sie abbrechen möchten, stornieren Sie bitte die geplante Herausforderung auf der Seite „Profil“.",
           "Kommende Herausforderungen"
         );
-      } else if (new Date() > addMinutes(item.date, -5) && new Date() < addMinutes(item.date, -3)) {
+      } else if (
+        new Date() > addMinutes(item.date, -5) &&
+        new Date() < addMinutes(item.date, -3)
+      ) {
         console.log("Cron-schedule--notification-->>", item);
         sendEmailNotification(
           item.receiver,
