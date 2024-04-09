@@ -84,24 +84,32 @@ socketIO.on("connection", (socket) => {
 
   // fetch existing users
   const users = [];
+  const messagesPerUser = new Map();
   messageStore.findMessagesForUser(socket.userID).forEach((message) => {
     const { from, to } = message;
     const otherUser = socket.userID === from ? to : from;
     if (messagesPerUser.has(otherUser)) {
+      console.log('MBMBM-->>', message)
       messagesPerUser.get(otherUser).push(message);
     } else {
+      console.log('MAMAM-->>', message)
       messagesPerUser.set(otherUser, [message]);
     }
   });
   sessionStore.findAllSessions().forEach((session) => {
+    console.log('************************-------------------------------------', session)
     users.push({
       userID: session.userID,
       username: session.username,
       connected: session.connected,
       status: session.status,
+      messages: messagesPerUser.get(session.userID) || [],
     });
   });
   socket.emit("users", users);
+
+  console.log('*I*********************-->>', messagesPerUser)
+
 
   console.log('socket---->>>', users)
 
@@ -111,6 +119,20 @@ socketIO.on("connection", (socket) => {
     username: socket.username,
     connected: true,
     status: "online",
+    messages: [],
+  });
+
+  // forward the private message to the right recipient (and to other tabs of the sender)
+  socket.on("challenge", ({ content, to }) => {
+    const message = {
+      content,
+      from: socket.userID,
+      to,
+    };
+    console.log('Message-->>>', message)
+    socket.to(to).to(socket.userID).emit("challenge", message);
+    // socket.to(to).emit("challenge", message);
+    messageStore.saveMessage(message);
   });
 
   // notify users upon disconnection
@@ -162,27 +184,27 @@ socketIO.on("connection", (socket) => {
   //   });
   // });
 
-  // socket.on("schedule-challenge", async (data) => {
-  //   console.log("schedule-challenge-->>", data);
-  //   try {
-  //     await ScheduleModel.create({
-  //       date: data.date,
-  //       challenger: data.challenger,
-  //       challengerEmail: data.challengerEmail,
-  //       receiver: data.receiver,
-  //       receiverEmail: data.receiverEmail,
-  //     });
-  //   } catch (err) {
-  //     console.log("schedule_save--->>>", err);
-  //   }
-  //   // socketIO.emit("schedule-challenge-response", {
-  //   //   date: data.date,
-  //   //   challenger: data.challenger,
-  //   //   challengerEmail: data.challengerEmail,
-  //   //   user: data.receiver,
-  //   //   email: data.receiverEmail,
-  //   // });
-  // });
+  socket.on("schedule-challenge", async (data) => {
+    console.log("schedule-challenge-->>", data);
+    try {
+      await ScheduleModel.create({
+        date: data.date,
+        challenger: data.challenger,
+        challengerEmail: data.challengerEmail,
+        receiver: data.receiver,
+        receiverEmail: data.receiverEmail,
+      });
+    } catch (err) {
+      console.log("schedule_save--->>>", err);
+    }
+    // socketIO.emit("schedule-challenge-response", {
+    //   date: data.date,
+    //   challenger: data.challenger,
+    //   challengerEmail: data.challengerEmail,
+    //   user: data.receiver,
+    //   email: data.receiverEmail,
+    // });
+  });
 });
 
 const addMinutes = (date, minutes) => {
