@@ -1,7 +1,10 @@
 const UserModel = require("../models/user.model.js");
 const ResultModel = require("../models/result.model.js");
+const TokenModel = require("../models/token.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const { sendEmailNotification } = require("../email.js");
 
 // Register new user
 registerUser = async (req, res) => {
@@ -175,4 +178,81 @@ addField = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, loginAdminUser, registerUser, updateUser, fetchUser, addField };
+resetLink = async (req, res) => {
+  try {
+    const user = await UserModel.findOne({ email: req.body.email });
+    if (!user)
+      return res.status(400).send("user with given email doesn't exist");
+
+    let token = await TokenModel.findOne({ userId: user._id });
+    if (!token) {
+      token = await new TokenModel({
+        userId: user._id,
+        token: crypto.randomBytes(32).toString("hex"),
+      }).save();
+    }
+
+    // const BASE_URL = "http://localhost:3000";
+    const BASE_URL = "https://octopus-app-jk7w6.ondigitalocean.app";
+
+    const link = `${BASE_URL}/retype-password/${user._id}/${token.token}`;
+    await sendEmailNotification(
+      user.username,
+      user.email,
+      "Fight Club",
+      "fightclub@gmail.com",
+      link,
+      "Password Reset"
+    );
+
+    res.status(200).send("password reset link sent to your email account");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+resetPassword = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.body.userId);
+    if (!user) return res.status(400).send("invalid link or expired");
+
+    const token = await TokenModel.findOne({
+      userId: user._id,
+      token: req.body.token,
+    });
+    if (!token) return res.status(400).send("Invalid link or expired");
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPass = await bcrypt.hash(req.body.password, salt);
+
+    await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        password: hashedPass,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    await TokenModel.findByIdAndDelete(token._id);
+
+    res.status(200).send("password reset sucessfully.");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+module.exports = {
+  loginUser,
+  loginAdminUser,
+  registerUser,
+  updateUser,
+  fetchUser,
+  addField,
+  resetLink,
+  resetPassword,
+};

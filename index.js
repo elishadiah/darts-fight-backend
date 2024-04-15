@@ -5,9 +5,8 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const http = require("http").Server(app);
 const cron = require("node-cron");
-const emailjs = require("@emailjs/nodejs");
 const ScheduleModel = require("./models/schedule.model.js");
-const EventModel = require("./models/events.model.js");
+const {sendEmailNotification} = require("./email.js");
 
 const crypto = require("crypto");
 
@@ -211,39 +210,6 @@ const addMinutes = (date, minutes) => {
   const dateCopy = new Date(date);
   dateCopy.setMinutes(dateCopy.getMinutes() + minutes);
   return dateCopy;
-};
-
-const sendEmailNotification = async (
-  to_name,
-  to_email,
-  from_name,
-  from_email,
-  message,
-  subject
-) => {
-  const templateParams = {
-    to_name: to_name,
-    to_email: to_email,
-    from_name: from_name,
-    from_email: from_email,
-    message: message,
-    subject: subject,
-  };
-
-  try {
-    const res = emailjs.send(
-      "service_4n8l9j4",
-      "template_47aorgi",
-      templateParams,
-      {
-        publicKey: "FsC9GcGGNTtVkNr1j",
-        privateKey: "q4hfWErgU_EfPxYnF0lsh",
-      }
-    );
-    console.log("SUCCESS!", res.status, res.text);
-  } catch (err) {
-    console.log("FAILED...", err);
-  }
 };
 
 const removeSchedule = async (id) => {
