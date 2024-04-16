@@ -107,10 +107,8 @@ loginAdminUser = async (req, res) => {
 
 // Get User
 fetchUser = async (req, res) => {
-  const { email } = req.body;
-
   try {
-    const user = await UserModel.find();
+    const user = await UserModel.findById(req.params.id);
 
     if (user) res.status(200).json({ user });
     else res.status(404).json("User not found");
@@ -121,40 +119,37 @@ fetchUser = async (req, res) => {
 
 // Update Profile
 updateUser = async (req, res) => {
-  // const salt = await bcrypt.genSalt(10);
-  // const hashedPass = await bcrypt.hash(req.body.password, salt);
-  // req.body.password = hashedPass;
-  const currentUser = await UserModel.findById(req.params.id);
-
-  const updatedUser = await UserModel.findByIdAndUpdate(
-    req.params.id,
-    {
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
-      email: req.body.email,
-      username: req.body.username,
-      avatar: req.body.avatar,
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
-
-  await ResultModel.findOneAndUpdate(
-    { username: currentUser.username },
-    {
-      username: req.body.username,
-      avatar: req.body.avatar,
-      email: req.body.email,
-    },
-    {
-      new: true,
-      runValidators: true,
-    }
-  );
-
   try {
+    if (!req.params.id) return res.status(400).json("There is no ID");
+    const currentUser = await UserModel.findById(req.params.id);
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      req.params.id,
+      {
+        firstname: req.body.firstname,
+        lastname: req.body.lastname,
+        email: req.body.email,
+        username: req.body.username,
+        avatar: req.body.avatar,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    await ResultModel.findOneAndUpdate(
+      { username: currentUser.username },
+      {
+        username: req.body.username,
+        avatar: req.body.avatar,
+        email: req.body.email,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
     res.status(200).json({
       status: "Success",
       data: {
@@ -162,6 +157,42 @@ updateUser = async (req, res) => {
       },
     });
   } catch (err) {
+    console.log("update-user-err-->>>", err);
+    res.status(500).json(err);
+  }
+};
+
+// password change
+changePassword = async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json("There is no ID");
+    const { currentPassword, newPassword } = req.body;
+    const user = await UserModel.findById(req.params.id);
+    if (user) {
+      const validity = await bcrypt.compare(currentPassword, user.password);
+      if (!validity) res.status(400).json("wrong password");
+      else {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPass = await bcrypt.hash(newPassword, salt);
+
+        await UserModel.findByIdAndUpdate(
+          user._id,
+          {
+            password: hashedPass,
+          },
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+
+        res.status(200).send("Password changed sucessfully.");
+      }
+    } else {
+      res.status(400).json("Not found user");
+    }
+  } catch (err) {
+    console.log("change-password-err-->>>", err);
     res.status(500).json(err);
   }
 };
@@ -252,6 +283,7 @@ module.exports = {
   registerUser,
   updateUser,
   fetchUser,
+  changePassword,
   addField,
   resetLink,
   resetPassword,
