@@ -209,6 +209,7 @@ getResult = (req, res) => {
               end,
               allResult,
               result: JSON.parse(match_json)[1],
+              matchResult: response.data
             });
         })
         .catch((error) => {
@@ -258,8 +259,23 @@ postResult = async (req, res) => {
           acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
           acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
           currentVictoryStreak: req.body.currentVictoryStreak,
+          seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
           maxVictoryStreak: req.body.maxVictoryStreak,
+          seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
           totalWinNo: req.body.totalWinNo,
+          pyramidClimber: req.body.pyramidClimber,
+          monthlyMaestro: req.body.monthlyMaestro,
+          challengeConqueror: req.body.challengeConqueror,
+          pyramidProtector: req.body.pyramidProtector,
+          legendaryRivalry: req.body.legendaryRivalry,
+          ironDart: req.body.ironDart,
+          master180: req.body.master180,
+          consistentScorer: req.body.consistentScorer,
+          grandMaster: req.body.grandMaster,
+          maxMarksman: req.body.maxMarksman,
+          dartEnthusiast: req.body.dartEnthusiast,
+          readyForIt: req.body.readyForIt,
+          championChallenger: req.body.championChallenger,
           level: req.body.level,
           date: req.body.date
         },
@@ -274,6 +290,19 @@ postResult = async (req, res) => {
 
   console.log("Result-Req-->>", req.body);
 };
+
+// addField = async (req, res) => {
+//   try {
+
+//     await ResultModel.updateMany({}, [{ $set: { userRole: false } }], {
+//       upsert: false,
+//     });
+//     res.status(200).json("Add success!");
+//   } catch (err) {
+//     console.log("Aggregate-->>", err);
+//     res.status(422).json(err);
+//   }
+// };
 
 module.exports = {
   getResult,

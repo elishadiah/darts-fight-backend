@@ -2,7 +2,18 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const detailSchema = new Schema({
-  total: { type: Number, default: 0 },
+  lifetime: { type: Number, default: 0 },
+  season: { type: Number, default: 0 },
+});
+
+const matchSchema = new Schema({
+  leg: { type: Number, default: 0 },
+  match: { type: Number, default: 0 },
+});
+
+const legendarySchema = new Schema({
+  opponent: { type: String, default: "" },
+  lifetime: { type: Number, default: 0 },
   season: { type: Number, default: 0 },
 });
 
@@ -15,7 +26,7 @@ detailSchema.pre("save", function (next) {
   }
 
   next();
-})
+});
 
 const ResultSchema = new Schema(
   {
@@ -39,33 +50,50 @@ const ResultSchema = new Schema(
     acceptWeekChallengeNo: { type: Number, default: 0 },
     previousWin: { type: Boolean, default: false },
     currentVictoryStreak: { type: Number, default: 0 },
+    seasonCurrentVictoryStreak: { type: Number, default: 0 },
     maxVictoryStreak: { type: Number, default: 0 },
+    seasonMaxVictoryStreak: { type: Number, default: 0 },
     totalWinNo: { type: Number, default: 0 },
-    monthlyMaestro: {type: Boolean, default: false},
-    pyramidClimber: detailSchema,
-    challengeConqueror: detailSchema,
-    pyramidProtector: {type: Number, default: 0},
-    legendaryRivalry: {type: Number, default: 0},
-    ironDart: {type: Number, default: 0},
-    master180: {type: Number, default: 0},
-    consistentScorer: {type: Number, default: 0},
-    grandMaster: {type: Number, default: 0},
+    monthlyMaestro: { type: Number, default: 0 },
+    pyramidClimber: { type: detailSchema, default: { lifetime: 0, season: 0 } },
+    challengeConqueror: {
+      type: detailSchema,
+      default: { lifetime: 0, season: 0 },
+    },
+    pyramidProtector: { type: Number, default: 0 },
+    legendaryRivalry: [{ type: legendarySchema }],
+    ironDart: { type: Number, default: 0 },
+    master180: { type: detailSchema, default: { lifetime: 0, season: 0 } },
+    consistentScorer: { type: Number, default: 0 },
+    grandMaster: { type: matchSchema, default: { leg: 0, match: 0 } },
+    maxMarksman: { type: Boolean, default: false },
+    dartEnthusiast: { type: Number, default: 0 },
+    comeback: { type: Number, default: 0 },
+    readyForIt: { type: Number, default: 0 },
+    championChallenger: { type: Boolean, default: false },
     level: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-ResultSchema.pre('save', function(next) {
+ResultSchema.pre("save", function (next) {
   const currentDate = new Date();
+  const currentDay = currentDate.getDate();
 
-  if (this.level === 6 && currentDate.getDate() === 30) {
-    this.monthlyMaestro = true;
-  } else {
-    this.monthlyMaestro = false;
+  // Check if it's the first day of the month
+  if (currentDay === 1) {
+    // Reset season properties
+    this.pyramidClimber.season = 0;
+    this.challengeConqueror.season = 0;
+    this.legendaryRivalry.forEach((rivalry) => {
+      rivalry.season = 0;
+    });
+    this.seasonCurrentVictoryStreak = 0;
+    this.seasonMaxVictoryStreak = 0;
   }
 
   next();
-})
+});
 
 const ResultModel = mongoose.model("Result", ResultSchema);
 module.exports = ResultModel;
