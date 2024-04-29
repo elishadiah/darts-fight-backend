@@ -172,13 +172,14 @@ getResult = (req, res) => {
             begin,
             end,
           } = response.data;
-          console.log("WWWW--->>", response.data);
 
           const user1InitResult = allResult.find((val) =>
-            val.username.trim().toLowerCase().includes(p1_name)
+            val.username.trim().toLowerCase().includes(p1_name.toLowerCase())
           );
+          console.log("WWWW--->>", response.data, ':::---->>>', user1InitResult);
+
           const user2InitResult = allResult.find((val) =>
-            val.username.trim().toLowerCase().includes(p2_name)
+            val.username.trim().toLowerCase().includes(p2_name.toLowerCase())
           );
 
           user1 = {
