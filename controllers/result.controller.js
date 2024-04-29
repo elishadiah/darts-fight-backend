@@ -283,6 +283,7 @@ postResult = async (req, res) => {
           championChallenger: req.body.championChallenger,
           level: req.body.level,
           date: req.body.date,
+          summary: req.body.summary,
         },
         { new: true, runValidators: true }
       );
