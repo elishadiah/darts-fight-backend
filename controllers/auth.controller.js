@@ -37,13 +37,13 @@ registerUser = async (req, res) => {
 
 // Login User
 loginUser = async (req, res) => {
-  console.log("Login-->>>", req.body);
-
   let { email, password } = req.body;
   email = email.trim().toLowerCase();
 
   try {
     const users = await UserModel.find();
+    console.log("Login-->>>", req.body);
+
     const user = users.find((val) =>
       val.email.trim().toLowerCase().includes(email)
     );

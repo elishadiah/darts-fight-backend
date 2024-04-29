@@ -17,6 +17,17 @@ const legendarySchema = new Schema({
   season: { type: Number, default: 0 },
 });
 
+const summarySchema = new Schema(
+  {
+    doubles: { type: Number, default: 0 },
+    master180: { type: Number, default: 0 },
+    first9Avg: { type: Number, default: 0 },
+    matchAvg: { type: Number, default: 0 },
+    level: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
 detailSchema.pre("save", function (next) {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
@@ -61,7 +72,16 @@ const ResultSchema = new Schema(
       default: { lifetime: 0, season: 0 },
     },
     pyramidProtector: { type: Number, default: 0 },
-    legendaryRivalry: [{ type: legendarySchema }],
+    legendaryRivalry: [
+      {
+        type: legendarySchema,
+        default: {
+          opponent: "",
+          lifetime: 0,
+          season: 0,
+        },
+      },
+    ],
     ironDart: { type: Number, default: 0 },
     master180: { type: detailSchema, default: { lifetime: 0, season: 0 } },
     consistentScorer: { type: Number, default: 0 },
@@ -72,6 +92,18 @@ const ResultSchema = new Schema(
     readyForIt: { type: Number, default: 0 },
     championChallenger: { type: Boolean, default: false },
     level: { type: Number, default: 0 },
+    summary: [
+      {
+        type: summarySchema,
+        default: {
+          doubles: 0,
+          master180: 0,
+          first9Avg: 0,
+          matchAvg: 0,
+          level: 0,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

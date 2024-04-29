@@ -172,13 +172,13 @@ getResult = (req, res) => {
             begin,
             end,
           } = response.data;
-          // console.log("WWWW--->>", response.data);
+          console.log("WWWW--->>", response.data);
 
           const user1InitResult = allResult.find((val) =>
-            val.username.includes(p1_name)
+            val.username.trim().toLowerCase().includes(p1_name)
           );
           const user2InitResult = allResult.find((val) =>
-            val.username.includes(p2_name)
+            val.username.trim().toLowerCase().includes(p2_name)
           );
 
           user1 = {
@@ -200,17 +200,15 @@ getResult = (req, res) => {
           if (isEmpty(user1InitResult) || isEmpty(user2InitResult))
             res.status(404).json("User not found");
 
-          res
-            .status(200)
-            .json({
-              user1,
-              user2,
-              begin,
-              end,
-              allResult,
-              result: JSON.parse(match_json)[1],
-              matchResult: response.data
-            });
+          res.status(200).json({
+            user1,
+            user2,
+            begin,
+            end,
+            allResult,
+            result: JSON.parse(match_json)[1],
+            matchResult: response.data,
+          });
         })
         .catch((error) => {
           res.status(500).json(error);
@@ -222,7 +220,13 @@ getResult = (req, res) => {
 fetchResult = async (req, res) => {
   const { username } = req.body;
   try {
-    const existResult = await ResultModel.findOne({ username });
+    const result = await ResultModel.find();
+    let existResult;
+    if (result) {
+      existResult = result.find((val) =>
+        val?.username?.toLowerCase().includes(username)
+      );
+    } else return res.status(500).json("Could not find result!");
     if (existResult) res.status(200).json(existResult);
     else res.status(404).json("There is no result for this user.");
   } catch (err) {
@@ -277,7 +281,7 @@ postResult = async (req, res) => {
           readyForIt: req.body.readyForIt,
           championChallenger: req.body.championChallenger,
           level: req.body.level,
-          date: req.body.date
+          date: req.body.date,
         },
         { new: true, runValidators: true }
       );

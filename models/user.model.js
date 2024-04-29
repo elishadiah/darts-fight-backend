@@ -37,5 +37,15 @@ const UserSchema = mongoose.Schema(
   { timestamps: true }
 );
 
+// UserSchema.pre("find", function (next) {
+//   if (this._conditions.username) {
+//     this._conditions.username = this._conditions.username?.toLowerCase();
+//   }
+//   if (this._conditions.email) {
+//     this._conditions.email = this._conditions.email?.toLowerCase();
+//   }
+//   next();
+// });
+
 const UserModel = mongoose.model("Users", UserSchema);
 module.exports = UserModel;
