@@ -5,12 +5,12 @@ const UserSchema = mongoose.Schema(
     firstname: {
       type: String,
       required: false,
-      default: ''
+      default: "",
     },
     lastname: {
       type: String,
       required: false,
-      default: '',
+      default: "",
     },
     email: {
       type: String,
@@ -25,14 +25,18 @@ const UserSchema = mongoose.Schema(
       required: true,
     },
     avatar: {
-      type: String, 
+      type: String,
       required: false,
-      default: ''
+      default: "",
     },
     userRole: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
+    profile: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

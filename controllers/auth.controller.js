@@ -197,6 +197,38 @@ changePassword = async (req, res) => {
   }
 };
 
+updateProfile = async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json("There is no ID");
+    const { profile } = req.body;
+    await UserModel.findByIdAndUpdate(
+      req.params.id,
+      { profile },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).json("Profile updated successfully!");
+  } catch (err) {
+    console.log("update-profile-err-->>>", err);
+    res.status(500).json(err);
+  }
+};
+
+getProfile = async (req, res) => {
+  try {
+    if (!req.params.id) return res.status(400).json("There is no ID");
+    const user = await UserModel.findById(req.params.id);
+    if (user) res.status(200).json({ profile: user.profile });
+    else res.status(404).json("User not found");
+  } catch (err) {
+    console.log("get-profile-err-->>>", err);
+    res.status(500).json(err);
+  }
+};
+
 addField = async (req, res) => {
   try {
     await UserModel.updateMany({}, [{ $set: { userRole: false } }], {
@@ -287,4 +319,6 @@ module.exports = {
   addField,
   resetLink,
   resetPassword,
+  updateProfile,
+  getProfile,
 };

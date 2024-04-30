@@ -6,7 +6,8 @@ const mongoose = require("mongoose");
 const http = require("http").Server(app);
 const cron = require("node-cron");
 const ScheduleModel = require("./models/schedule.model.js");
-const {sendEmailNotification} = require("./email.js");
+const ResultModel = require("./models/result.model.js");
+const { sendEmailNotification } = require("./email.js");
 
 const crypto = require("crypto");
 
@@ -43,7 +44,7 @@ socketIO.use((socket, next) => {
   const sessionID = socket.handshake.auth.sessionID;
   if (sessionID) {
     const session = sessionStore.findSession(sessionID);
-    console.log('Session-->>>', session, sessionID, socket.handshake.auth)
+    console.log("Session-->>>", session, sessionID, socket.handshake.auth);
     if (session) {
       socket.sessionID = sessionID;
       socket.userID = session.userID;
@@ -52,7 +53,7 @@ socketIO.use((socket, next) => {
     }
   }
   const username = socket.handshake.auth.username;
-  console.log('username-->>>', username, socket.handshake.auth)
+  console.log("username-->>>", username, socket.handshake.auth);
   if (!username) {
     return next(new Error("invalid username"));
   }
@@ -88,15 +89,18 @@ socketIO.on("connection", (socket) => {
     const { from, to } = message;
     const otherUser = socket.userID === from ? to : from;
     if (messagesPerUser.has(otherUser)) {
-      console.log('MBMBM-->>', message)
+      console.log("MBMBM-->>", message);
       messagesPerUser.get(otherUser).push(message);
     } else {
-      console.log('MAMAM-->>', message)
+      console.log("MAMAM-->>", message);
       messagesPerUser.set(otherUser, [message]);
     }
   });
   sessionStore.findAllSessions().forEach((session) => {
-    console.log('************************-------------------------------------', session)
+    console.log(
+      "************************-------------------------------------",
+      session
+    );
     users.push({
       userID: session.userID,
       username: session.username,
@@ -107,10 +111,9 @@ socketIO.on("connection", (socket) => {
   });
   socket.emit("users", users);
 
-  console.log('*I*********************-->>', messagesPerUser)
+  console.log("*I*********************-->>", messagesPerUser);
 
-
-  console.log('socket---->>>', users)
+  console.log("socket---->>>", users);
 
   // notify existing users
   socket.broadcast.emit("user connected", {
@@ -128,7 +131,7 @@ socketIO.on("connection", (socket) => {
       from: socket.userID,
       to,
     };
-    console.log('Message-->>>', message)
+    console.log("Message-->>>", message);
     socket.to(to).to(socket.userID).emit("challenge", message);
     // socket.to(to).emit("challenge", message);
     messageStore.saveMessage(message);
@@ -219,6 +222,33 @@ const removeSchedule = async (id) => {
     console.log("----->>", err);
   }
 };
+
+cron.schedule("0 0 1 * *", async function () {
+  try {
+    await ResultModel.updateMany(
+      {},
+      {
+        $set: {
+          "pyramidClimber.season": 0,
+          "challengeConqueror.season": 0,
+          "legendaryRivalry.$[].season": 0,
+          "master180.season": 0,
+          pyramidProtector: 0,
+          ironDart: 0,
+          consistentScorer: 0,
+          "grandMaster.match": 0,
+          "grandMaster.leg": 0,
+          dartEnthusiast: 0,
+          sentTotalChallengeNo: 0,
+          readyForIt: 0,
+        },
+      }
+    );
+    console.log("Season field reset successfully");
+  } catch (err) {
+    console.error("Failed to reset season field:", err);
+  }
+});
 
 cron.schedule("* * * * *", async () => {
   try {

@@ -8,7 +8,9 @@ const {
   addField,
   resetLink,
   resetPassword,
-  changePassword
+  changePassword,
+  updateProfile,
+  getProfile
 } = require("../controllers/auth.controller.js");
 
 const router = express.Router();
@@ -22,5 +24,7 @@ router.get("/get/:id", fetchUser);
 router.post("/add-field", addField);
 router.post("/reset-password", resetLink);
 router.post("/retype-password", resetPassword);
+router.post("/update-profile/:id", updateProfile);
+router.get("/get-profile/:id", getProfile);
 
 module.exports = router;
