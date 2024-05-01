@@ -1,6 +1,6 @@
 const EventModel = require("../models/events.model.js");
 
-postEvent = async (req, res) => {
+const postEvent = async (req, res) => {
   try {
     await EventModel.create({
       date: req.body.date,
@@ -12,7 +12,7 @@ postEvent = async (req, res) => {
   }
 };
 
-getEvent = async (req, res) => {
+const getEvent = async (req, res) => {
   try {
     const events = await EventModel.find();
     res.status(200).json(events);

@@ -7,118 +7,128 @@ const crypto = require("crypto");
 const { sendEmailNotification } = require("../email.js");
 
 // Register new user
-registerUser = async (req, res) => {
-  console.log("Register-->>>", req.body);
-  const salt = await bcrypt.genSalt(10);
-  const hashedPass = await bcrypt.hash(req.body.password, salt);
-  req.body.password = hashedPass;
-  const newUser = new UserModel(req.body);
-  let { username, email, avatar } = req.body;
-  username = username.trim();
-  email = email.trim();
+const registerUser = async (req, res) => {
   try {
-    const oldUser = await UserModel.findOne({ username });
+    const { username, email, avatar, password } = req.body;
+    const existingUser = await UserModel.findOne({ username: username.trim() });
 
-    if (oldUser)
+    if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
+    }
 
-    const user = await newUser.save();
+    const salt = await bcrypt.genSalt(10);
+    const hashedPass = await bcrypt.hash(password, salt);
+
+    const newUser = new UserModel({
+      username: username.trim(),
+      email: email.trim(),
+      avatar,
+      password: hashedPass,
+    });
+
+    const savedUser = await newUser.save();
+
+    await ResultModel.create({
+      username: savedUser.username,
+      email: savedUser.email,
+      avatar: savedUser.avatar,
+    });
+
     const token = jwt.sign(
       { username: user.username, id: user._id },
       "my-32-character-ultra-secure-and-ultra-long-secret",
       { expiresIn: "1h" }
     );
-    await ResultModel.create({ username, email, avatar });
-    res.status(200).json({ user, token });
+
+    res.status(200).json({ user: savedUser, token });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
 // Login User
-loginUser = async (req, res) => {
-  let { email, password } = req.body;
-  email = email.trim().toLowerCase();
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
     const users = await UserModel.find();
-    console.log("Login-->>>", req.body);
 
     const user = users.find((val) =>
-      val.email.trim().toLowerCase().includes(email)
+      val.email.trim().toLowerCase().includes(email.trim().toLowerCase())
     );
-    if (user) {
-      const validity = await bcrypt.compare(password, user.password);
 
-      if (!validity) {
-        res.status(400).json("wrong password");
-      } else {
-        const token = jwt.sign(
-          { email: user.email, id: user._id },
-          "my-32-character-ultra-secure-and-ultra-long-secret",
-          { expiresIn: "6h" }
-        );
-        res.status(200).json({ user, token });
-      }
-    } else {
-      res.status(404).json("User not found");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(400).json("wrong password");
+    }
+
+    const token = jwt.sign(
+      { email: user.email, id: user._id },
+      "my-32-character-ultra-secure-and-ultra-long-secret",
+      { expiresIn: "6h" }
+    );
+    res.status(200).json({ user, token });
   } catch (err) {
     res.status(500).json(err);
   }
 };
 
 // Login Admin User
-loginAdminUser = async (req, res) => {
-  console.log("Login-->>>", req.body);
-
-  let { email, password } = req.body;
-  email = email.trim().toLowerCase();
+const loginAdminUser = async (req, res) => {
+  const { email, password } = req.body;
 
   try {
     const users = await UserModel.find();
     const user = users.find((val) =>
-      val.email.trim().toLowerCase().includes(email)
+      val.email.trim().toLowerCase().includes(email.trim().toLowerCase())
     );
-    if (user) {
-      if (user.userRole) {
-        const validity = await bcrypt.compare(password, user.password);
 
-        if (!validity) {
-          res.status(400).json("wrong password");
-        } else {
-          const token = jwt.sign(
-            { email: user.email, id: user._id, role: user.userRole },
-            "my-32-character-ultra-secure-and-ultra-long-secret",
-            { expiresIn: "6h" }
-          );
-          res.status(200).json({ user, token });
-        }
-      } else {
-        res.status(404).json("Non-admin user");
-      }
-    } else {
-      res.status(404).json("User not found");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    if (!user.userRole) {
+      return res.status(400).json({ message: "Non-admin user" });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    if (!isValidPassword) {
+      return res.status(400).json("wrong password");
+    }
+
+    const token = jwt.sign(
+      { email: user.email, id: user._id, role: user.userRole },
+      "my-32-character-ultra-secure-and-ultra-long-secret",
+      { expiresIn: "6h" }
+    );
+
+    res.status(200).json({ user, token });
   } catch (err) {
     res.status(500).json(err);
   }
 };
 
-// Get User
-fetchUser = async (req, res) => {
+// Get User by ID
+const getUserById = async (req, res) => {
   try {
     const user = await UserModel.findById(req.params.id);
 
-    if (user) res.status(200).json({ user });
-    else res.status(404).json("User not found");
+    if (!user) return res.status(404).json("User not found");
+
+    res.status(200).json({ user });
   } catch (err) {
     res.status(500).json(err);
   }
 };
 
 // Update Profile
-updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
     const currentUser = await UserModel.findById(req.params.id);
@@ -150,6 +160,7 @@ updateUser = async (req, res) => {
         runValidators: true,
       }
     );
+
     res.status(200).json({
       status: "Success",
       data: {
@@ -163,44 +174,50 @@ updateUser = async (req, res) => {
 };
 
 // password change
-changePassword = async (req, res) => {
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
-    const { currentPassword, newPassword } = req.body;
+
     const user = await UserModel.findById(req.params.id);
-    if (user) {
-      const validity = await bcrypt.compare(currentPassword, user.password);
-      if (!validity) res.status(400).json("wrong password");
-      else {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPass = await bcrypt.hash(newPassword, salt);
 
-        await UserModel.findByIdAndUpdate(
-          user._id,
-          {
-            password: hashedPass,
-          },
-          {
-            new: true,
-            runValidators: true,
-          }
-        );
+    if (!user) return res.status(404).json("Not found user");
 
-        res.status(200).send("Password changed sucessfully.");
+    const isValidPassword = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+
+    if (!isValidPassword) return res.status(400).json("wrong password");
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPass = await bcrypt.hash(newPassword, salt);
+
+    await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        password: hashedPass,
+      },
+      {
+        new: true,
+        runValidators: true,
       }
-    } else {
-      res.status(400).json("Not found user");
-    }
+    );
+
+    res.status(200).send("Password changed sucessfully.");
   } catch (err) {
     console.log("change-password-err-->>>", err);
     res.status(500).json(err);
   }
 };
 
-updateProfile = async (req, res) => {
+const updateProfile = async (req, res) => {
+  const { profile } = req.body;
+
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
-    const { profile } = req.body;
+
     await UserModel.findByIdAndUpdate(
       req.params.id,
       { profile },
@@ -217,19 +234,38 @@ updateProfile = async (req, res) => {
   }
 };
 
-getProfile = async (req, res) => {
+const getProfileByID = async (req, res) => {
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
+
     const user = await UserModel.findById(req.params.id);
-    if (user) res.status(200).json({ profile: user.profile });
-    else res.status(404).json("User not found");
+
+    if (!user) return res.status(404).json("User not found");
+
+    res.status(200).json({ profile: user.profile });
   } catch (err) {
     console.log("get-profile-err-->>>", err);
     res.status(500).json(err);
   }
 };
 
-addField = async (req, res) => {
+const getUserByUsername = async (req, res) => {
+  try {
+    if (!req.params.username)
+      return res.status(400).json("There is no username");
+
+    const user = await UserModel.findOne({ username: req.params.username });
+
+    if (!user) return res.status(404).json("User not found");
+
+    res.status(200).json(user);
+  } catch (err) {
+    console.log("get-profile-err-->>>", err);
+    res.status(500).json(err);
+  }
+};
+
+const addField = async (req, res) => {
   try {
     await UserModel.updateMany({}, [{ $set: { userRole: false } }], {
       upsert: false,
@@ -241,13 +277,15 @@ addField = async (req, res) => {
   }
 };
 
-resetLink = async (req, res) => {
+const resetLink = async (req, res) => {
   try {
-    const user = await UserModel.findOne({ email: req.body.email });
+    const { email } = req.body;
+    const user = await UserModel.findOne({ email });
     if (!user)
-      return res.status(400).send("user with given email doesn't exist");
+      return res.status(404).send("User with given email doesn't exist");
 
     let token = await TokenModel.findOne({ userId: user._id });
+
     if (!token) {
       token = await new TokenModel({
         userId: user._id,
@@ -257,8 +295,8 @@ resetLink = async (req, res) => {
 
     // const BASE_URL = "http://localhost:3000";
     const BASE_URL = "https://octopus-app-jk7w6.ondigitalocean.app";
-
     const link = `${BASE_URL}/retype-password/${user._id}/${token.token}`;
+
     await sendEmailNotification(
       user.username,
       user.email,
@@ -275,7 +313,7 @@ resetLink = async (req, res) => {
   }
 };
 
-resetPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
   try {
     const user = await UserModel.findById(req.body.userId);
     if (!user) return res.status(400).send("invalid link or expired");
@@ -314,11 +352,12 @@ module.exports = {
   loginAdminUser,
   registerUser,
   updateUser,
-  fetchUser,
   changePassword,
   addField,
   resetLink,
   resetPassword,
   updateProfile,
-  getProfile,
+  getProfileByID,
+  getUserById,
+  getUserByUsername,
 };

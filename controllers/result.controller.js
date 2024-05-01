@@ -2,7 +2,7 @@ const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
 const axios = require("axios");
 
-getSubResult = (req, res) => {
+const getSubResult = (req, res) => {
   const { url } = req.body;
   console.log("-----SUB--RESULT-----");
   puppeteer
@@ -125,33 +125,12 @@ getSubResult = (req, res) => {
 //     });
 // };
 
-const getHighFinish = (firstArray, secondArray) => {
-  const counts = [];
-
-  // Create a map to store the counts of elements in the first array
-  const map = new Map();
-  for (const num of firstArray) {
-    if (map.has(num)) {
-      map.set(num, map.get(num) + 1);
-    } else {
-      map.set(num, 1);
-    }
-  }
-
-  // Count the occurrences of elements from the second array
-  for (const num of secondArray) {
-    counts.push(map.get(num) || 0);
-  }
-
-  return counts;
-};
-
 const isEmpty = (data) => {
   if (data.length === 0 || data === null || data === undefined) return true;
   else return false;
 };
 
-getResult = (req, res) => {
+const getResult = (req, res) => {
   let allResult = [],
     user1,
     user2;
@@ -218,7 +197,7 @@ getResult = (req, res) => {
     .catch((err) => res.status(404).json("User not found"));
 };
 
-fetchResult = async (req, res) => {
+const fetchResult = async (req, res) => {
   const { username } = req.body;
   try {
     const result = await ResultModel.find();
@@ -235,7 +214,7 @@ fetchResult = async (req, res) => {
   }
 };
 
-fetchAllResult = async (req, res) => {
+const fetchAllResult = async (req, res) => {
   try {
     const result = await ResultModel.find();
     res.status(200).json(result);
@@ -244,7 +223,7 @@ fetchAllResult = async (req, res) => {
   }
 };
 
-postResult = async (req, res) => {
+const postResult = async (req, res) => {
   const { username } = req.body;
   try {
     const existResult = ResultModel.find({ username });
@@ -296,19 +275,6 @@ postResult = async (req, res) => {
 
   console.log("Result-Req-->>", req.body);
 };
-
-// addField = async (req, res) => {
-//   try {
-
-//     await ResultModel.updateMany({}, [{ $set: { userRole: false } }], {
-//       upsert: false,
-//     });
-//     res.status(200).json("Add success!");
-//   } catch (err) {
-//     console.log("Aggregate-->>", err);
-//     res.status(422).json(err);
-//   }
-// };
 
 module.exports = {
   getResult,
