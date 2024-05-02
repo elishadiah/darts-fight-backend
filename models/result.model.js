@@ -17,13 +17,16 @@ const matchSchema = new Schema({
   match: { type: Number, default: 0 },
 });
 
-const summarySchema = new Schema({
-  doubles: { type: Number, default: 0 },
-  master180: { type: Number, default: 0 },
-  first9Avg: { type: Number, default: 0 },
-  matchAvg: { type: Number, default: 0 },
-  level: { type: Number, default: 0 },
-});
+const summarySchema = new Schema(
+  {
+    doubles: { type: Number, default: 0 },
+    master180: { type: Number, default: 0 },
+    first9Avg: { type: Number, default: 0 },
+    matchAvg: { type: Number, default: 0 },
+    level: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
 
 const ResultSchema = new Schema(
   {
@@ -63,7 +66,7 @@ const ResultSchema = new Schema(
     pyramidProtector: { type: Number, default: 0 },
     legendaryRivalry: [
       {
-        type: [legendarySchema],
+        type: legendarySchema,
         default: () => [
           {
             opponent: "",
@@ -88,7 +91,7 @@ const ResultSchema = new Schema(
     level: { type: Number, default: 0 },
     summary: [
       {
-        type: [summarySchema],
+        type: summarySchema,
         default: () => [
           {
             doubles: 0,
