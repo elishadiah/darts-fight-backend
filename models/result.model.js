@@ -17,16 +17,14 @@ const matchSchema = new Schema({
   match: { type: Number, default: 0 },
 });
 
-const summarySchema = new Schema(
-  {
-    doubles: { type: Number, default: 0 },
-    master180: { type: Number, default: 0 },
-    first9Avg: { type: Number, default: 0 },
-    matchAvg: { type: Number, default: 0 },
-    level: { type: Number, default: 0 },
-  },
-  { timestamps: true }
-);
+const summarySchema = new Schema({
+  doubles: { type: Number, default: 0 },
+  master180: { type: Number, default: 0 },
+  first9Avg: { type: Number, default: 0 },
+  matchAvg: { type: Number, default: 0 },
+  level: { type: Number, default: 0 },
+  date: { type: Date, default: Date.now },
+});
 
 const ResultSchema = new Schema(
   {
