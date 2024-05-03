@@ -72,6 +72,10 @@ const loginUser = async (req, res) => {
       "my-32-character-ultra-secure-and-ultra-long-secret",
       { expiresIn: "6h" }
     );
+
+    user.lastLoginDate = new Date();
+    await user.save();
+
     res.status(200).json({ user, token });
   } catch (err) {
     res.status(500).json(err);
