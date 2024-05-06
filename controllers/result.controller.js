@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
+const EventModel = require("../models/events.model");
 const axios = require("axios");
 
 const getSubResult = (req, res) => {
@@ -155,7 +156,12 @@ const getResult = (req, res) => {
           const user1InitResult = allResult.find((val) =>
             val.username.trim().toLowerCase().includes(p1_name.toLowerCase())
           );
-          console.log("WWWW--->>", response.data, ':::---->>>', user1InitResult);
+          console.log(
+            "WWWW--->>",
+            response.data,
+            ":::---->>>",
+            user1InitResult
+          );
 
           const user2InitResult = allResult.find((val) =>
             val.username.trim().toLowerCase().includes(p2_name.toLowerCase())
@@ -226,47 +232,53 @@ const fetchAllResult = async (req, res) => {
 const postResult = async (req, res) => {
   const { username } = req.body;
   try {
-    const existResult = ResultModel.find({ username });
-    if (!existResult) res.status(404).json("Could not find result!");
-    else {
-      await ResultModel.findOneAndUpdate(
-        {
-          username: req.body.username,
-          email: req.body.email,
-        },
-        {
-          master26: req.body.master26,
-          highFinish: req.body.highFinish,
-          sentMonthChallengeNo: req.body.sentMonthChallengeNo,
-          sentWeekChallengeNo: req.body.sentWeekChallengeNo,
-          sentTotalChallengeNo: req.body.sentTotalChallengeNo,
-          acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
-          acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
-          currentVictoryStreak: req.body.currentVictoryStreak,
-          seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
-          maxVictoryStreak: req.body.maxVictoryStreak,
-          seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
-          totalWinNo: req.body.totalWinNo,
-          pyramidClimber: req.body.pyramidClimber,
-          monthlyMaestro: req.body.monthlyMaestro,
-          challengeConqueror: req.body.challengeConqueror,
-          pyramidProtector: req.body.pyramidProtector,
-          legendaryRivalry: req.body.legendaryRivalry,
-          ironDart: req.body.ironDart,
-          master180: req.body.master180,
-          consistentScorer: req.body.consistentScorer,
-          grandMaster: req.body.grandMaster,
-          maxMarksman: req.body.maxMarksman,
-          dartEnthusiast: req.body.dartEnthusiast,
-          readyForIt: req.body.readyForIt,
-          championChallenger: req.body.championChallenger,
-          level: req.body.level,
-          date: req.body.date,
-          summary: req.body.summary,
-        },
-        { new: true, runValidators: true }
-      );
-    }
+    const existResult = await ResultModel.find({ username });
+    if (!existResult) return res.status(404).json("Could not find result!");
+    await ResultModel.findOneAndUpdate(
+      {
+        username: req.body.username,
+        email: req.body.email,
+      },
+      {
+        master26: req.body.master26,
+        highFinish: req.body.highFinish,
+        sentMonthChallengeNo: req.body.sentMonthChallengeNo,
+        sentWeekChallengeNo: req.body.sentWeekChallengeNo,
+        sentTotalChallengeNo: req.body.sentTotalChallengeNo,
+        acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
+        acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
+        currentVictoryStreak: req.body.currentVictoryStreak,
+        seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
+        maxVictoryStreak: req.body.maxVictoryStreak,
+        seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
+        totalWinNo: req.body.totalWinNo,
+        pyramidClimber: req.body.pyramidClimber,
+        monthlyMaestro: req.body.monthlyMaestro,
+        challengeConqueror: req.body.challengeConqueror,
+        pyramidProtector: req.body.pyramidProtector,
+        legendaryRivalry: req.body.legendaryRivalry,
+        ironDart: req.body.ironDart,
+        master180: req.body.master180,
+        consistentScorer: req.body.consistentScorer,
+        grandMaster: req.body.grandMaster,
+        maxMarksman: req.body.maxMarksman,
+        dartEnthusiast: req.body.dartEnthusiast,
+        readyForIt: req.body.readyForIt,
+        championChallenger: req.body.championChallenger,
+        level: req.body.level,
+        date: req.body.date,
+        summary: req.body.summary,
+      },
+      { new: true, runValidators: true }
+    );
+
+    await EventModel.create({
+      eventType: "match",
+      user: req.body.username,
+      targetUser: req.body.targetUser,
+      link: req.body.link,
+    });
+
     res.status(200).json("Success!");
     console.log("success");
   } catch (e) {

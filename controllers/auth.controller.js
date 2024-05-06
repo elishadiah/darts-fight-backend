@@ -1,5 +1,6 @@
 const UserModel = require("../models/user.model.js");
 const ResultModel = require("../models/result.model.js");
+const EventModel = require("../models/events.model.js");
 const TokenModel = require("../models/token.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
@@ -8,8 +9,9 @@ const { sendEmailNotification } = require("../email.js");
 
 // Register new user
 const registerUser = async (req, res) => {
+  const { username, email, avatar, password } = req.body;
+
   try {
-    const { username, email, avatar, password } = req.body;
     const existingUser = await UserModel.findOne({ username: username.trim() });
 
     if (existingUser) {
@@ -35,10 +37,15 @@ const registerUser = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { username: user.username, id: user._id },
+      { username: savedUser.username, id: savedUser._id },
       "my-32-character-ultra-secure-and-ultra-long-secret",
       { expiresIn: "1h" }
     );
+
+    await EventModel.create({
+      eventType: "register",
+      user: savedUser.username,
+    });
 
     res.status(200).json({ user: savedUser, token });
   } catch (error) {
@@ -75,6 +82,11 @@ const loginUser = async (req, res) => {
 
     user.lastLoginDate = new Date();
     await user.save();
+
+    await EventModel.create({
+      eventType: "login",
+      user: user.username,
+    });
 
     res.status(200).json({ user, token });
   } catch (err) {
@@ -113,6 +125,21 @@ const loginAdminUser = async (req, res) => {
     );
 
     res.status(200).json({ user, token });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// Logout User
+const logoutUser = async (req, res) => {
+  const { username } = req.body;
+  try {
+    await EventModel.create({
+      eventType: "logout",
+      user: username,
+    });
+
+    res.status(200).json({ message: "Logout successful" });
   } catch (err) {
     res.status(500).json(err);
   }
@@ -258,7 +285,12 @@ const getUserByUsername = async (req, res) => {
     if (!req.params.username)
       return res.status(400).json("There is no username");
 
-    const user = await UserModel.findOne({ username: req.params.username });
+    const users = await UserModel.find();
+
+    const user = users.find(
+      (val) =>
+        val.username.toLowerCase() === req.params.username.trim().toLowerCase()
+    );
 
     if (!user) return res.status(404).json("User not found");
 
@@ -355,6 +387,7 @@ module.exports = {
   loginUser,
   loginAdminUser,
   registerUser,
+  logoutUser,
   updateUser,
   changePassword,
   addField,

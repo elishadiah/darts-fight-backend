@@ -4,7 +4,21 @@ const Schema = mongoose.Schema;
 const EventSchema = new Schema(
   {
     date: { type: Date, default: Date.now },
-    content: { type: String },
+    eventType: {
+      type: String,
+      enum: [
+        "register",
+        "login",
+        "logout",
+        "schedule",
+        "quick",
+        "decline",
+        "match",
+      ],
+    },
+    user: { type: String },
+    targetUser: { type: String },
+    link: { type: String, default: null },
   },
   { timestamps: true }
 );

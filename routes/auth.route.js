@@ -3,6 +3,7 @@ const {
   loginUser,
   loginAdminUser,
   registerUser,
+  logoutUser,
   getUserById,
   updateUser,
   addField,
@@ -19,6 +20,7 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/admin-login", loginAdminUser);
+router.post("/logout", logoutUser);
 router.post("/update/:id", updateUser);
 router.post("/change-password/:id", changePassword);
 router.get("/get/:id", getUserById);
