@@ -276,7 +276,12 @@ const postResult = async (req, res) => {
       eventType: "match",
       user: req.body.username,
       targetUser: req.body.targetUser,
-      link: req.body.link,
+      match: {
+        link: req.body.link,
+        user1Won: req.body.won,
+        user2Won: req.body.targetWon,
+        achievements: req.body.earnedAchievements,
+      },
     });
 
     res.status(200).json("Success!");
