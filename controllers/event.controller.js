@@ -13,28 +13,30 @@ const postEvent = async (req, res) => {
 const getEvent = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const content = req.query.content?.toLowerCase() || "";
   const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
   const skipIndex = (page - 1) * limit;
+  const eventType = req.query.eventType || [];
+  const userName = req.query.userName || "";
+
+  let query = {};
+
+  if (eventType.length > 0) {
+    query.eventType = { $in: eventType };
+  }
+
+  if (userName) {
+    query.$or = [
+      { user: { $regex: new RegExp(userName, "i") } },
+      { targetUser: { $regex: new RegExp(userName, "i") } },
+    ];
+  }
 
   try {
-    const events = await EventModel.find({
-      $or: [
-        { user: { $regex: new RegExp(content, "i") } },
-        { targetUser: { $regex: new RegExp(content, "i") } },
-        { eventType: { $regex: new RegExp(content, "i") } },
-      ],
-    })
+    const events = await EventModel.find(query)
       .sort({ date: sortDirection })
       .skip(skipIndex)
       .limit(limit);
-    const total = await EventModel.countDocuments({
-      $or: [
-        { user: { $regex: new RegExp(content, "i") } },
-        { targetUser: { $regex: new RegExp(content, "i") } },
-        { eventType: { $regex: new RegExp(content, "i") } },
-      ],
-    });
+    const total = await EventModel.countDocuments(query);
 
     res.status(200).send({
       page,
