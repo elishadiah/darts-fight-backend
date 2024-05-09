@@ -145,19 +145,6 @@ const logoutUser = async (req, res) => {
   }
 };
 
-// Get User by ID
-const getUserById = async (req, res) => {
-  try {
-    const user = await UserModel.findById(req.params.id);
-
-    if (!user) return res.status(404).json("User not found");
-
-    res.status(200).json({ user });
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
-
 // Update Profile
 const updateUser = async (req, res) => {
   try {
@@ -301,9 +288,35 @@ const getUserByUsername = async (req, res) => {
   }
 };
 
+// Get User by ID
+const getUserById = async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+
+    if (!user) return res.status(404).json("User not found");
+
+    res.status(200).json({ user });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// Get All Users
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await UserModel.find();
+
+    if (!users) return res.status(404).json("Users not found");
+
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { userRole: false } }], {
+    await UserModel.updateMany({}, [{ $set: { lastLoginDate: new Date() } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");
@@ -397,4 +410,5 @@ module.exports = {
   getProfileByID,
   getUserById,
   getUserByUsername,
+  getAllUsers
 };

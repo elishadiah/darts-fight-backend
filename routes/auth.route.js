@@ -13,6 +13,7 @@ const {
   updateProfile,
   getProfileByID,
   getUserByUsername,
+  getAllUsers
 } = require("../controllers/auth.controller.js");
 
 const router = express.Router();
@@ -30,5 +31,6 @@ router.post("/retype-password", resetPassword);
 router.post("/update-profile/:id", updateProfile);
 router.get("/get-profile/:id", getProfileByID);
 router.get("/get-user/:username", getUserByUsername);
+router.get("/get-users", getAllUsers);
 
 module.exports = router;
