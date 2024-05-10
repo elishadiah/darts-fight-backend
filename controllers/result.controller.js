@@ -131,76 +131,60 @@ const isEmpty = (data) => {
   else return false;
 };
 
-const getResult = (req, res) => {
-  let allResult = [],
-    user1,
-    user2;
-  ResultModel.find()
-    .then((result) => {
-      allResult = result;
-      axios
-        .get(req.query.params.url)
-        .then((response) => {
-          const {
-            p1_name,
-            p2_name,
-            p1_match_avg,
-            p2_match_avg,
-            p1_legs_won,
-            p2_legs_won,
-            match_json,
-            begin,
-            end,
-          } = response.data;
+const getResult = async (req, res) => {
+  try {
+    const allResult = await ResultModel.find();
+    const response = await axios.get(req.query.params.url);
+    const {
+      p1_name,
+      p2_name,
+      p1_match_avg,
+      p2_match_avg,
+      p1_legs_won,
+      p2_legs_won,
+      match_json,
+      begin,
+      end,
+    } = response.data;
 
-          const user1InitResult = allResult.find((val) =>
-            val.username.trim().toLowerCase().includes(p1_name.toLowerCase())
-          );
-          console.log(
-            "WWWW--->>",
-            response.data,
-            ":::---->>>",
-            user1InitResult
-          );
+    const user1InitResult = allResult.find((val) =>
+      val.username.trim().toLowerCase().includes(p1_name.toLowerCase())
+    );
 
-          const user2InitResult = allResult.find((val) =>
-            val.username.trim().toLowerCase().includes(p2_name.toLowerCase())
-          );
+    const user2InitResult = allResult.find((val) =>
+      val.username.trim().toLowerCase().includes(p2_name.toLowerCase())
+    );
 
-          user1 = {
-            name: p1_name,
-            won: p1_legs_won,
-            avg: p1_match_avg,
-            // breakfast: cntBreakfast1,
-            init: user1InitResult,
-          };
+    if (!user1InitResult || !user2InitResult) {
+      return res.status(404).json("User not found");
+    }
 
-          user2 = {
-            name: p2_name,
-            won: p2_legs_won,
-            avg: p2_match_avg,
-            // breakfast: cntBreakfast2,
-            init: user2InitResult,
-          };
+    const user1 = {
+      name: p1_name,
+      won: p1_legs_won,
+      avg: p1_match_avg,
+      init: user1InitResult,
+    };
 
-          if (isEmpty(user1InitResult) || isEmpty(user2InitResult))
-            res.status(404).json("User not found");
+    const user2 = {
+      name: p2_name,
+      won: p2_legs_won,
+      avg: p2_match_avg,
+      init: user2InitResult,
+    };
 
-          res.status(200).json({
-            user1,
-            user2,
-            begin,
-            end,
-            allResult,
-            result: JSON.parse(match_json)[1],
-            matchResult: response.data,
-          });
-        })
-        .catch((error) => {
-          res.status(500).json(error);
-        });
-    })
-    .catch((err) => res.status(404).json("User not found"));
+    res.status(200).json({
+      user1,
+      user2,
+      begin,
+      end,
+      allResult,
+      result: JSON.parse(match_json)[1],
+      matchResult: response.data,
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
 };
 
 const fetchResult = async (req, res) => {
@@ -257,6 +241,7 @@ const postResult = async (req, res) => {
         challengeConqueror: req.body.challengeConqueror,
         pyramidProtector: req.body.pyramidProtector,
         legendaryRivalry: req.body.legendaryRivalry,
+        previousWin: req.body.previousWin,
         ironDart: req.body.ironDart,
         master180: req.body.master180,
         consistentScorer: req.body.consistentScorer,
