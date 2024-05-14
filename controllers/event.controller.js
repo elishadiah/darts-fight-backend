@@ -13,7 +13,7 @@ const postEvent = async (req, res) => {
 const getEvent = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
-  const sortDirection = req.query.sortDirection === "asc" ? 1 : -1;
+  const sortDirection = req.query.sortDirection === "desc" ? 1 : -1;
   const skipIndex = (page - 1) * limit;
   const eventType = req.query.eventType || [];
   const userName = req.query.userName || "";
