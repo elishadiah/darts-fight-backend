@@ -91,6 +91,18 @@ socketIO.on("connection", (socket) => {
   });
   socket.emit("users", users);
 
+  socket.on("findUserByName", (data) => {
+    const { username } = data;
+    const user = sessionStore
+      .findAllSessions()
+      ?.find((val) => val.username === username);
+    if (user) {
+      socket.emit("foundUser", user);
+    } else {
+      socket.emit("foundUser", null);
+    }
+  });
+
   NotificationModel.find({ to: socket.userID, read: false }).then(
     (notifications) => {
       socket.emit("notifications", notifications);
