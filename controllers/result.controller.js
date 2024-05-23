@@ -278,10 +278,36 @@ const postResult = async (req, res) => {
   console.log("Result-Req-->>", req.body);
 };
 
+const inactiveUser = async (req, res) => {
+  try {
+    await ResultModel.findByIdAndUpdate(req.body.id, {
+      active: req.body.active,
+    });
+    res.status(200).json("Inactive success!");
+  } catch (err) {
+    console.log("Aggregate-->>", err);
+    res.status(422).json(err);
+  }
+};
+
+const addField = async (req, res) => {
+  try {
+    await ResultModel.updateMany({}, [{ $set: { active: true } }], {
+      upsert: false,
+    });
+    res.status(200).json("Add success!");
+  } catch (err) {
+    console.log("Aggregate-->>", err);
+    res.status(422).json(err);
+  }
+};
+
 module.exports = {
   getResult,
   postResult,
   getSubResult,
   fetchResult,
   fetchAllResult,
+  addField,
+  inactiveUser,
 };
