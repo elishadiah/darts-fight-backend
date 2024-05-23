@@ -213,6 +213,57 @@ const fetchAllResult = async (req, res) => {
   }
 };
 
+const adminUpdateResult = async (req, res) => {
+  const { username } = req.body;
+  try {
+    const existResult = await ResultModel.find({ username });
+    if (!existResult) return res.status(404).json("Could not find result!");
+    await ResultModel.findOneAndUpdate(
+      {
+        username: req.body.username,
+        email: req.body.email,
+      },
+      {
+        master26: req.body.master26,
+        highFinish: req.body.highFinish,
+        sentMonthChallengeNo: req.body.sentMonthChallengeNo,
+        sentWeekChallengeNo: req.body.sentWeekChallengeNo,
+        sentTotalChallengeNo: req.body.sentTotalChallengeNo,
+        acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
+        acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
+        currentVictoryStreak: req.body.currentVictoryStreak,
+        seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
+        maxVictoryStreak: req.body.maxVictoryStreak,
+        seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
+        totalWinNo: req.body.totalWinNo,
+        pyramidClimber: req.body.pyramidClimber,
+        monthlyMaestro: req.body.monthlyMaestro,
+        challengeConqueror: req.body.challengeConqueror,
+        pyramidProtector: req.body.pyramidProtector,
+        legendaryRivalry: req.body.legendaryRivalry,
+        previousWin: req.body.previousWin,
+        ironDart: req.body.ironDart,
+        master180: req.body.master180,
+        consistentScorer: req.body.consistentScorer,
+        grandMaster: req.body.grandMaster,
+        maxMarksman: req.body.maxMarksman,
+        dartEnthusiast: req.body.dartEnthusiast,
+        readyForIt: req.body.readyForIt,
+        championChallenger: req.body.championChallenger,
+        level: req.body.level,
+        date: req.body.date,
+        summary: req.body.summary,
+      },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json("Success!");
+    console.log("success");
+  } catch (e) {
+    res.status(422).json(e);
+  }
+};
+
 const postResult = async (req, res) => {
   const { username } = req.body;
   try {
@@ -310,4 +361,5 @@ module.exports = {
   fetchAllResult,
   addField,
   inactiveUser,
+  adminUpdateResult,
 };
