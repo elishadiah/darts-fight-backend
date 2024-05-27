@@ -23,6 +23,9 @@ const ResultRoute = require("./routes/result.route.js");
 const ScheduleRoute = require("./routes/schedule.route.js");
 const EventRoute = require("./routes/event.route.js");
 const NotificationRoute = require("./routes/notification.route.js");
+const SeasonRoute = require("./routes/season.route.js");
+
+const { saveSeason } = require("./controllers/season.controller.js");
 
 const socketIO = require("socket.io")(http, {
   cors: {
@@ -246,6 +249,8 @@ cron.schedule("0 0 1 * *", async function () {
         },
       }
     );
+
+    await saveSeason({}, { status: () => ({ json: () => {} }) });
     console.log("Season field reset successfully");
   } catch (err) {
     console.error("Failed to reset season field:", err);
@@ -258,7 +263,7 @@ cron.schedule("* * * * *", async () => {
     schedules.map((item) => {
       if (
         new Date() > addMinutes(item.date, -240) &&
-        new Date() < addMinutes(item.date, -238)
+        new Date() < addMinutes(item.date, -239)
       ) {
         sendEmailNotification(
           item.receiver,
@@ -269,8 +274,8 @@ cron.schedule("* * * * *", async () => {
           "Kommende Herausforderungen"
         );
       } else if (
-        new Date() > addMinutes(item.date, -5) &&
-        new Date() < addMinutes(item.date, -3)
+        new Date() > addMinutes(item.date, -1) &&
+        new Date() < new Date(item.date)
       ) {
         console.log("Cron-schedule--notification-->>", item);
         sendEmailNotification(
@@ -306,6 +311,7 @@ app.use("/result", ResultRoute);
 app.use("/schedule", ScheduleRoute);
 app.use("/event", EventRoute);
 app.use("/notification", NotificationRoute);
+app.use("/season", SeasonRoute);
 
 http.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
