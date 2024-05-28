@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
 const EventModel = require("../models/events.model");
+const SeasonModel = require("../models/season.model");
 const axios = require("axios");
 
 const getSubResult = (req, res) => {
@@ -218,7 +219,7 @@ const adminUpdateResult = async (req, res) => {
   try {
     const existResult = await ResultModel.find({ username });
     if (!existResult) return res.status(404).json("Could not find result!");
-    await ResultModel.findOneAndUpdate(
+    const newResult = await ResultModel.findOneAndUpdate(
       {
         username: req.body.username,
         email: req.body.email,
@@ -257,8 +258,36 @@ const adminUpdateResult = async (req, res) => {
       { new: true, runValidators: true }
     );
 
+    if (req.body.level === 6) {
+      const season = await SeasonModel.findOne().sort({ season: -1 });
+      if (season) {
+        const topMembers = season.topMembers;
+        const index = topMembers.findIndex((val) => val.equals(newResult._id));
+        if (index === -1) {
+          topMembers.push(newResult._id);
+          await SeasonModel.findByIdAndUpdate(season._id, {
+            topMembers,
+          });
+        }
+      }
+    } else {
+      const season = await SeasonModel.findOne().sort({ season: -1 });
+
+      if (season) {
+        const topMembers = season.topMembers;
+        const index = topMembers.findIndex((val) => val.equals(newResult._id));
+        if (index !== -1) {
+          topMembers.splice(index, 1);
+
+          await SeasonModel.findByIdAndUpdate(season._id, {
+            topMembers,
+          });
+        }
+      }
+    }
+
     res.status(200).json("Success!");
-    console.log("success");
+    console.log("success-->>>");
   } catch (e) {
     res.status(422).json(e);
   }
@@ -319,6 +348,34 @@ const postResult = async (req, res) => {
         achievements: req.body.earnedAchievements,
       },
     });
+
+    if (req.body.level === 6) {
+      const season = await SeasonModel.findOne().sort({ season: -1 });
+      if (season) {
+        const topMembers = season.topMembers;
+        const index = topMembers.findIndex((val) => val.equals(newResult._id));
+        if (index === -1) {
+          topMembers.push(newResult._id);
+          await SeasonModel.findByIdAndUpdate(season._id, {
+            topMembers,
+          });
+        }
+      }
+    } else {
+      const season = await SeasonModel.findOne().sort({ season: -1 });
+
+      if (season) {
+        const topMembers = season.topMembers;
+        const index = topMembers.findIndex((val) => val.equals(newResult._id));
+        if (index !== -1) {
+          topMembers.splice(index, 1);
+
+          await SeasonModel.findByIdAndUpdate(season._id, {
+            topMembers,
+          });
+        }
+      }
+    }
 
     res.status(200).json("Success!");
     console.log("success");

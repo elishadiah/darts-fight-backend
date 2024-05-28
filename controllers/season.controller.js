@@ -12,6 +12,28 @@ const getActiveUsers = async () => {
   return activeUsers;
 };
 
+async function resetSeasonProperties() {
+  await ResultModel.updateMany(
+    {},
+    {
+      $set: {
+        "pyramidClimber.season": 0,
+        "challengeConqueror.season": 0,
+        "legendaryRivalry.$[].season": 0,
+        "master180.season": 0,
+        pyramidProtector: 0,
+        ironDart: 0,
+        consistentScorer: 0,
+        "grandMaster.match": 0,
+        "grandMaster.leg": 0,
+        dartEnthusiast: 0,
+        sentTotalChallengeNo: 0,
+        readyForIt: 0,
+      },
+    }
+  );
+}
+
 const saveSeason = async (req, res) => {
   try {
     const activeUsers = await getActiveUsers();
@@ -63,6 +85,8 @@ const adminSeason = async (req, res) => {
       topMembers: resultIds,
     });
 
+    await resetSeasonProperties();
+
     res.status(200).json("Season has been saved successfully!");
   } catch (err) {
     res.status(422).json(err);
@@ -71,12 +95,7 @@ const adminSeason = async (req, res) => {
 
 const getAllSeasons = async (req, res) => {
   try {
-    const seasons = await SeasonModel.find()
-      .populate({
-        path: "topMembers",
-        match: { level: 6 },
-      })
-      .exec();
+    const seasons = await SeasonModel.find();
 
     res.status(200).json(seasons);
   } catch (err) {
