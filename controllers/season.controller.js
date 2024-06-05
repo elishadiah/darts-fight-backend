@@ -13,42 +13,50 @@ const getActiveUsers = async () => {
 };
 
 async function resetSeasonProperties() {
-  await ResultModel.updateMany(
-    {},
-    {
-      $set: {
-        "pyramidClimber.season": 0,
-        "challengeConqueror.season": 0,
-        "legendaryRivalry.$[].season": 0,
-        "master180.season": 0,
-        pyramidProtector: 0,
-        ironDart: 0,
-        consistentScorer: 0,
-        "grandMaster.match": 0,
-        "grandMaster.leg": 0,
-        dartEnthusiast: 0,
-        sentTotalChallengeNo: 0,
-        readyForIt: 0,
+  try {
+    await ResultModel.updateMany(
+      {
+        $or: [
+          { pyramidClimber: { $type: "object" } },
+          { challengeConqueror: { $type: "object" } },
+          { legendaryRivalry: { $type: "object" } },
+          { master180: { $type: "object" } },
+          { grandMaster: { $type: "object" } },
+        ],
       },
-    }
-  );
+      {
+        $set: {
+          "pyramidClimber.season": 0,
+          "challengeConqueror.season": 0,
+          // "legendaryRivalry.$[].season": 0,
+          "master180.season": 0,
+          pyramidProtector: 0,
+          ironDart: 0,
+          consistentScorer: 0,
+          "grandMaster.match": 0,
+          "grandMaster.leg": 0,
+          dartEnthusiast: 0,
+          sentTotalChallengeNo: 0,
+          readyForIt: 0,
+          level: 0,
+        },
+      }
+    );
+  } catch (err) {
+    console.log("Error resetting season properties: ", err);
+  }
 }
 
 const saveSeason = async (req, res) => {
   try {
     const activeUsers = await getActiveUsers();
+
     const season = new SeasonModel({
       activeUsers,
     });
     await season.save();
 
-    const results = await ResultModel.find({ level: 6 });
-
-    const resultIds = results.map((result) => result._id);
-
-    await SeasonModel.findByIdAndUpdate(season._id, {
-      topMembers: resultIds,
-    });
+    await resetSeasonProperties();
 
     res.status(200).json("Season has been saved successfully!");
   } catch (err) {
@@ -80,10 +88,6 @@ const adminSeason = async (req, res) => {
     });
 
     await newSeason.save();
-
-    await SeasonModel.findByIdAndUpdate(newSeason._id, {
-      topMembers: resultIds,
-    });
 
     await resetSeasonProperties();
 

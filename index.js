@@ -6,7 +6,6 @@ const mongoose = require("mongoose");
 const http = require("http").Server(app);
 const cron = require("node-cron");
 const ScheduleModel = require("./models/schedule.model.js");
-const ResultModel = require("./models/result.model.js");
 const NotificationModel = require("./models/notification.model.js");
 const { sendEmailNotification } = require("./email.js");
 
@@ -230,26 +229,6 @@ const removeSchedule = async (id) => {
 
 cron.schedule("0 0 1 * *", async function () {
   try {
-    await ResultModel.updateMany(
-      {},
-      {
-        $set: {
-          "pyramidClimber.season": 0,
-          "challengeConqueror.season": 0,
-          "legendaryRivalry.$[].season": 0,
-          "master180.season": 0,
-          pyramidProtector: 0,
-          ironDart: 0,
-          consistentScorer: 0,
-          "grandMaster.match": 0,
-          "grandMaster.leg": 0,
-          dartEnthusiast: 0,
-          sentTotalChallengeNo: 0,
-          readyForIt: 0,
-        },
-      }
-    );
-
     await saveSeason({}, { status: () => ({ json: () => {} }) });
     console.log("Season field reset successfully");
   } catch (err) {

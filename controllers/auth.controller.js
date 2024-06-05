@@ -233,10 +233,12 @@ const changePassword = async (req, res) => {
 const updateProfile = async (req, res) => {
   const { profile } = req.body;
 
+  console.log('profile-->>>', profile, req.body)
+
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
 
-    await UserModel.findByIdAndUpdate(
+    const newUser = await UserModel.findByIdAndUpdate(
       req.params.id,
       { profile },
       {
@@ -245,7 +247,7 @@ const updateProfile = async (req, res) => {
       }
     );
 
-    res.status(200).json("Profile updated successfully!");
+    res.status(200).json(newUser?.profile);
   } catch (err) {
     console.log("update-profile-err-->>>", err);
     res.status(500).json(err);
