@@ -33,6 +33,10 @@ const UserSchema = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    flowliga: {
+      type: Boolean,
+      default: false,
+    },
     profile: {
       type: String,
       default: "",

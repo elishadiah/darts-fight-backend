@@ -68,6 +68,12 @@ const loginUser = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    if (!user.flowliga) {
+      return res.status(400).json({
+        message: "Your registration request has not been approved yet.",
+      });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
@@ -233,7 +239,7 @@ const changePassword = async (req, res) => {
 const updateProfile = async (req, res) => {
   const { profile } = req.body;
 
-  console.log('profile-->>>', profile, req.body)
+  console.log("profile-->>>", profile, req.body);
 
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");
@@ -318,7 +324,7 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { lastLoginDate: new Date() } }], {
+    await UserModel.updateMany({}, [{ $set: { flowliga: true } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");
@@ -345,7 +351,7 @@ const resetLink = async (req, res) => {
     }
 
     // const BASE_URL = "http://localhost:3000";
-    const BASE_URL = "https://octopus-app-jk7w6.ondigitalocean.app";
+    const BASE_URL = "https://dartsfightclub.de";
     const link = `${BASE_URL}/retype-password/${user._id}/${token.token}`;
 
     await sendEmailNotification(
@@ -398,6 +404,36 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const userApprove = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { flowliga } = req.body;
+    const user = await UserModel.findById(id);
+    if (!user) return res.status(404).send("User not found");
+
+    await UserModel.findByIdAndUpdate(
+      id,
+      {
+        flowliga: flowliga,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send("User approved successfully.");
+
+    // await EventModel.create({
+    //   eventType: "approve",
+    //   user: user.username,
+    // });
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdminUser,
@@ -412,5 +448,6 @@ module.exports = {
   getProfileByID,
   getUserById,
   getUserByUsername,
-  getAllUsers
+  getAllUsers,
+  userApprove,
 };
