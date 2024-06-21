@@ -95,6 +95,7 @@ socketIO.on("connection", (socket) => {
 
   socket.on("findUserByName", (data) => {
     const { username } = data;
+    console.log('find--user--byname-->>', username)
     const user = sessionStore
       .findAllSessions()
       ?.find((val) => val.username === username);

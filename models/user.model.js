@@ -45,6 +45,26 @@ const UserSchema = mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    socials: {
+      type: Array,
+      default: [],
+    },
+    discord: {
+      type: String,
+      default: "",
+    },
+    twitter: {
+      type: String,
+      default: "",
+    },
+    instagram: {
+      type: String,
+      default: "",
+    },
+    facebook: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

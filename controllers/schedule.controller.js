@@ -27,8 +27,7 @@ fetchAllSchedule = async (req, res) => {
 
 removeSchedule = async (req, res) => {
   try {
-    const res = await ScheduleModel.findByIdAndDelete(req.body._id);
-    console.log('schedule--delete--->>>', res)
+    await ScheduleModel.findByIdAndDelete(req.body._id);
     res.status(200).json("Delete successfully");
   } catch (err) {
     res.status(422).json(err);

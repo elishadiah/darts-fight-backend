@@ -65,13 +65,13 @@ const loginUser = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json("User not found");
     }
 
     if (!user.flowliga) {
-      return res.status(400).json({
-        message: "Your registration request has not been approved yet.",
-      });
+      return res
+        .status(400)
+        .json("Your registration request has not been approved yet.");
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
@@ -165,6 +165,10 @@ const updateUser = async (req, res) => {
         email: req.body.email,
         username: req.body.username,
         avatar: req.body.avatar,
+        discord: req.body.discord,
+        twitter: req.body.twitter,
+        facebook: req.body.facebook,
+        instagram: req.body.instagram,
       },
       {
         new: true,
@@ -324,7 +328,7 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { flowliga: true } }], {
+    await UserModel.updateMany({}, [{ $set: { instagram: "" } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");

@@ -298,7 +298,7 @@ const postResult = async (req, res) => {
   try {
     const existResult = await ResultModel.find({ username });
     if (!existResult) return res.status(404).json("Could not find result!");
-    await ResultModel.findOneAndUpdate(
+    const newResult = await ResultModel.findOneAndUpdate(
       {
         username: req.body.username,
         email: req.body.email,
