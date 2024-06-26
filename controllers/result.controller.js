@@ -410,6 +410,30 @@ const addField = async (req, res) => {
   }
 };
 
+const migrateField = async (req, res) => {
+  try {
+    const results = await ResultModel.find({
+      dartEnthusiast: { $exists: true, $type: "number" },
+    });
+
+    for (let result of results) {
+      await ResultModel.findByIdAndUpdate(result._id, {
+        $set: {
+          dartEnthusiast: {
+            season: 0,
+            lifetime: 0,
+          },
+        },
+      });
+    }
+
+    res.status(200).json("Migrate success!");
+  } catch (err) {
+    console.log("Migrate-failed-->>", err);
+    res.status(422).json(err);
+  }
+};
+
 module.exports = {
   getResult,
   postResult,
@@ -419,4 +443,5 @@ module.exports = {
   addField,
   inactiveUser,
   adminUpdateResult,
+  migrateField,
 };

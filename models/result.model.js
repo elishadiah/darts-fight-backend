@@ -32,7 +32,10 @@ const ResultSchema = new Schema(
     username: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     avatar: { type: String, default: "" },
-    master26: { type: Number, default: 0 },
+    master26: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     highFinish: {
       type: Array,
       default: [
@@ -43,7 +46,10 @@ const ResultSchema = new Schema(
     },
     sentMonthChallengeNo: { type: Number, default: 0 },
     sentWeekChallengeNo: { type: Number, default: 0 },
-    sentTotalChallengeNo: { type: Number, default: 0 },
+    sentTotalChallengeNo: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     acceptMonthChallengeNo: { type: Number, default: 0 },
     acceptWeekChallengeNo: { type: Number, default: 0 },
     previousWin: { type: Boolean, default: false },
@@ -52,7 +58,10 @@ const ResultSchema = new Schema(
     maxVictoryStreak: { type: Number, default: 0 },
     seasonMaxVictoryStreak: { type: Number, default: 0 },
     totalWinNo: { type: Number, default: 0 },
-    monthlyMaestro: { type: Number, default: 0 },
+    monthlyMaestro: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     pyramidClimber: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
@@ -61,7 +70,10 @@ const ResultSchema = new Schema(
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
     },
-    pyramidProtector: { type: Number, default: 0 },
+    pyramidProtector: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     legendaryRivalry: [
       {
         type: legendarySchema,
@@ -74,17 +86,29 @@ const ResultSchema = new Schema(
         ],
       },
     ],
-    ironDart: { type: Number, default: 0 },
+    ironDart: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     master180: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
     },
-    consistentScorer: { type: Number, default: 0 },
+    consistentScorer: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     grandMaster: { type: matchSchema, default: () => ({ leg: 0, match: 0 }) },
     maxMarksman: { type: Boolean, default: false },
-    dartEnthusiast: { type: Number, default: 0 },
+    dartEnthusiast: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     comeback: { type: Number, default: 0 },
-    readyForIt: { type: Number, default: 0 },
+    readyForIt: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     championChallenger: { type: Boolean, default: false },
     level: { type: Number, default: 0 },
     summary: [
@@ -104,7 +128,7 @@ const ResultSchema = new Schema(
     active: {
       type: Boolean,
       default: true,
-    }
+    },
   },
   { timestamps: true }
 );
