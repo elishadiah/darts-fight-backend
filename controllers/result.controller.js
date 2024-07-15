@@ -333,6 +333,7 @@ const postResult = async (req, res) => {
         level: req.body.level,
         date: req.body.date,
         summary: req.body.summary,
+        active: true,
       },
       { new: true, runValidators: true }
     );
