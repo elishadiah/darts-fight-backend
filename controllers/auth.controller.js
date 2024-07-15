@@ -438,6 +438,47 @@ const userApprove = async (req, res) => {
   }
 };
 
+const updateLastLoginDate = async (req, res) => {
+  try {
+    const { username } = req.body;
+    const user = await UserModel.findOne({
+      username: username,
+    });
+    if (!user) return res.status(404).send("User not found");
+
+    await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        lastLoginDate: new Date(),
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send("Last login date updated successfully.");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+const getLastLoginDate = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const user = await UserModel.findOne({
+      username: username,
+    });
+    if (!user) return res.status(404).send("User not found");
+
+    res.status(200).send(user.lastLoginDate);
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdminUser,
@@ -454,4 +495,6 @@ module.exports = {
   getUserByUsername,
   getAllUsers,
   userApprove,
+  updateLastLoginDate,
+  getLastLoginDate
 };

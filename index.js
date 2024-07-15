@@ -7,6 +7,7 @@ const http = require("http").Server(app);
 const cron = require("node-cron");
 const ScheduleModel = require("./models/schedule.model.js");
 const NotificationModel = require("./models/notification.model.js");
+const ResultModel = require("./models/result.model.js");
 const { sendEmailNotification } = require("./email.js");
 
 const crypto = require("crypto");
@@ -95,7 +96,7 @@ socketIO.on("connection", (socket) => {
 
   socket.on("findUserByName", (data) => {
     const { username } = data;
-    console.log('find--user--byname-->>', username)
+    console.log("find--user--byname-->>", username);
     const user = sessionStore
       .findAllSessions()
       ?.find((val) => val.username === username);
@@ -234,6 +235,69 @@ cron.schedule("0 0 1 * *", async function () {
     console.log("Season field reset successfully");
   } catch (err) {
     console.error("Failed to reset season field:", err);
+  }
+});
+
+cron.schedule("0 0 * * *", async function () {
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+  try {
+    const result = await ResultModel.updateMany(
+      { date: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
+      { $set: { active: false } } // Update operation: sets the active field to false
+    );
+
+    console.log("inactive documents:", result.modifiedCount);
+
+    const documents = await ResultModel.find({
+      date: { $lt: oneWeekAgo },
+      level: { $in: [4, 5, 6] },
+    });
+
+    for (const doc of documents) {
+      const currentLevel = doc.level;
+      const nextLevel = currentLevel - 1;
+      const userCountAtNextLevel = await ResultModel.countDocuments({
+        level: nextLevel,
+      });
+
+      if (
+        (currentLevel === 6 && userCountAtNextLevel >= 8) ||
+        (currentLevel === 5 && userCountAtNextLevel >= 16) ||
+        (currentLevel === 4 && userCountAtNextLevel >= 32)
+      ) {
+        // Find a document at the next level to exchange levels
+        const replacementDoc = await ResultModel.findOne({ level: nextLevel });
+        if (replacementDoc) {
+          // Exchange levels
+          await ResultModel.updateOne(
+            { _id: doc._id },
+            { $set: { level: replacementDoc.level } }
+          );
+          await ResultModel.updateOne(
+            { _id: replacementDoc._id },
+            { $set: { level: currentLevel } }
+          );
+        }
+      } else {
+        // Simply decrement the level of the current document
+        await ResultModel.updateOne(
+          { _id: doc._id },
+          { $set: { level: nextLevel } }
+        );
+      }
+
+      // Perform the update
+      if (Object.keys(updateData).length > 0) {
+        await ResultModel.updateOne({ _id: doc._id }, updateData);
+      }
+    }
+
+    console.log("Documents updated successfully");
+  } catch (err) {
+    console.error("Failed to ping users:", err);
   }
 });
 
