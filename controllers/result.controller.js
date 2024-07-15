@@ -400,10 +400,29 @@ const inactiveUser = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await ResultModel.updateMany({}, [{ $set: { active: true } }], {
-      upsert: false,
-    });
+    await ResultModel.updateMany(
+      {},
+      [
+        {
+          $set: {
+            grandMaster: {
+              lifetime: { leg: 0, match: 0 },
+              season: { leg: 0, match: 0 },
+            },
+          },
+        },
+      ],
+      {
+        upsert: false,
+      }
+    );
     res.status(200).json("Add success!");
+    // const updateResult = await ResultModel.updateMany(
+    //   {},
+    //   { $unset: { grandMaster: "" } }
+    // );
+
+    // res.status(200).json(updateResult.modifiedCount + " document(s) deleted.");
   } catch (err) {
     console.log("Aggregate-->>", err);
     res.status(422).json(err);

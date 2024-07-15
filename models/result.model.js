@@ -13,8 +13,14 @@ const legendarySchema = new Schema({
 });
 
 const matchSchema = new Schema({
-  leg: { type: Number, default: 0 },
-  match: { type: Number, default: 0 },
+  lifetime: {
+    leg: { type: Number, default: 0 },
+    match: { type: Number, default: 0 },
+  },
+  season: {
+    leg: { type: Number, default: 0 },
+    match: { type: Number, default: 0 },
+  },
 });
 
 const summarySchema = new Schema({
@@ -98,7 +104,13 @@ const ResultSchema = new Schema(
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
     },
-    grandMaster: { type: matchSchema, default: () => ({ leg: 0, match: 0 }) },
+    grandMaster: {
+      type: matchSchema,
+      default: () => ({
+        lifetime: { leg: 0, match: 0 },
+        season: { leg: 0, match: 0 },
+      }),
+    },
     maxMarksman: { type: Boolean, default: false },
     dartEnthusiast: {
       type: detailSchema,
