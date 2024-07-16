@@ -245,14 +245,14 @@ cron.schedule("0 0 * * *", async function () {
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
   try {
     const result = await ResultModel.updateMany(
-      { date: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
+      { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
       { $set: { active: false } } // Update operation: sets the active field to false
     );
 
     console.log("inactive documents:", result.modifiedCount);
 
     const documents = await ResultModel.find({
-      date: { $lt: oneWeekAgo },
+      updatedAt: { $lt: oneWeekAgo },
       level: { $in: [4, 5, 6] },
     });
 
