@@ -8,7 +8,8 @@ const {
   addField,
   inactiveUser,
   adminUpdateResult,
-  migrateField
+  migrateField,
+  bulkActivateUsers
 } = require("../controllers/result.controller.js");
 
 const router = express.Router();
@@ -22,5 +23,6 @@ router.post('/add-field', addField);
 router.post('/inactive', inactiveUser);
 router.post('/admin-update', adminUpdateResult);
 router.post('/migrate', migrateField);
+router.post('/bulk-activate', bulkActivateUsers);
 
 module.exports = router;

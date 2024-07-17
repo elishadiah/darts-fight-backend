@@ -399,6 +399,31 @@ const inactiveUser = async (req, res) => {
   }
 };
 
+const bulkActivateUsers = async (req, res) => {
+  try {
+    let updateResult;
+    if (req.body.active) {
+      updateResult = await ResultModel.updateMany(
+        { active: false }, // Filter criteria
+        { $set: { active: true } } // Update action
+      );
+    } else {
+      updateResult = await ResultModel.updateMany(
+        { active: true }, // Filter criteria
+        { $set: { active: false } } // Update action
+      );
+    }
+
+    // Respond with the number of documents updated
+    res
+      .status(200)
+      .json(`${updateResult.nModified} users activated successfully!`);
+  } catch (err) {
+    console.log("Error in bulkActivateUsers-->>", err);
+    res.status(422).json(err);
+  }
+};
+
 const addField = async (req, res) => {
   try {
     await ResultModel.updateMany(
@@ -464,4 +489,5 @@ module.exports = {
   inactiveUser,
   adminUpdateResult,
   migrateField,
+  bulkActivateUsers,
 };
