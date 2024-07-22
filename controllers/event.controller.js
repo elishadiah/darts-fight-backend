@@ -18,7 +18,7 @@ const getEvent = async (req, res) => {
   const eventType = req.query.eventType || [];
   const userName = req.query.userName || "";
 
-  console.log("sortDirection", sortDirection);
+  console.log("sortDirection", userName);
 
   let query = {};
 

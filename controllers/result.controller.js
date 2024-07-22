@@ -402,14 +402,15 @@ const inactiveUser = async (req, res) => {
 const bulkActivateUsers = async (req, res) => {
   try {
     let updateResult;
+    let selectedIds = req.body.items.map(item => item.id);
     if (req.body.active) {
       updateResult = await ResultModel.updateMany(
-        { active: false }, // Filter criteria
+        { _id: { $in: selectedIds }, active: false }, // Filter criteria
         { $set: { active: true } } // Update action
       );
     } else {
       updateResult = await ResultModel.updateMany(
-        { active: true }, // Filter criteria
+        { _id: { $in: selectedIds }, active: true }, // Filter criteria
         { $set: { active: false } } // Update action
       );
     }
