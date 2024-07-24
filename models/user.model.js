@@ -65,6 +65,14 @@ const UserSchema = mongoose.Schema(
       type: String,
       default: "",
     },
+    customBalance: {
+      type: Number,
+      default: 0,
+    },
+    defaultBalance: {
+      type: Number,
+      default: 6,
+    },
   },
   { timestamps: true }
 );

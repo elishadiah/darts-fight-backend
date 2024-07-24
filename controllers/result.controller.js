@@ -2,6 +2,7 @@ const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
 const EventModel = require("../models/events.model");
 const SeasonModel = require("../models/season.model");
+const GlobalCoinModel = require("../models/globalCoin.model");
 const axios = require("axios");
 
 const getSubResult = (req, res) => {
@@ -444,12 +445,19 @@ const addField = async (req, res) => {
       }
     );
     res.status(200).json("Add success!");
+
     // const updateResult = await ResultModel.updateMany(
     //   {},
     //   { $unset: { grandMaster: "" } }
     // );
 
     // res.status(200).json(updateResult.modifiedCount + " document(s) deleted.");
+
+    // await GlobalCoinModel.create({
+    //   amount: 0,
+    // });
+
+    // res.status(200).json("Create success!");
   } catch (err) {
     console.log("Aggregate-->>", err);
     res.status(422).json(err);

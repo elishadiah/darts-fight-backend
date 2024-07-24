@@ -16,7 +16,11 @@ const {
   getAllUsers,
   userApprove,
   updateLastLoginDate,
-  getLastLoginDate
+  getLastLoginDate,
+  getGlobalCoin,
+  updateGlobalCoin,
+  updateBalance,
+  getBalance,
 } = require("../controllers/auth.controller.js");
 
 const router = express.Router();
@@ -38,5 +42,9 @@ router.get("/get-users", getAllUsers);
 router.post("/approve-user/:id", userApprove);
 router.post("/update-last-login-date", updateLastLoginDate);
 router.get('/get-last-login-date/:username', getLastLoginDate);
+router.get('/get-global-coin', getGlobalCoin);
+router.post('/update-global-coin', updateGlobalCoin);
+router.post('/update-balance/:id', updateBalance);
+router.get('/get-balance/:id', getBalance);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const UserModel = require("../models/user.model.js");
 const ResultModel = require("../models/result.model.js");
 const EventModel = require("../models/events.model.js");
 const TokenModel = require("../models/token.model.js");
+const GlobalCoinModel = require("../models/globalCoin.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -328,7 +329,7 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { instagram: "" } }], {
+    await UserModel.updateMany({}, [{ $set: { customBalance: 0 } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");
@@ -479,6 +480,72 @@ const getLastLoginDate = async (req, res) => {
   }
 };
 
+const getGlobalCoin = async (req, res) => {
+  try {
+    const globalCoin = await GlobalCoinModel.findOne({});
+    if (!globalCoin) return res.status(404).send("Global coin not found");
+
+    res.status(200).send(globalCoin);
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+const updateGlobalCoin = async (req, res) => {
+  try {
+    const { globalCoin } = req.body;
+    await GlobalCoinModel.updateMany({}, [{ $set: { globalCoin } }], {
+      upsert: true,
+    });
+    res.status(200).send("Global coin updated successfully.");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+const updateBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { balance } = req.body;
+    const user = await UserModel.findOneById(id);
+    if (!user) return res.status(404).send("User not found");
+
+    await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        customBalance: balance,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send("Balance updated successfully.");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+const getBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await UserModel.findOneById(id);
+    if (!user) return res.status(404).send("User not found");
+
+    res.status(200).send({
+      customeBalance: user.customBalance,
+      defaultBalance: user.defaultBalance,
+    });
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdminUser,
@@ -496,5 +563,9 @@ module.exports = {
   getAllUsers,
   userApprove,
   updateLastLoginDate,
-  getLastLoginDate
+  getLastLoginDate,
+  getGlobalCoin,
+  updateBalance,
+  updateGlobalCoin,
+  getBalance,
 };
