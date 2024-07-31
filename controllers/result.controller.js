@@ -403,7 +403,7 @@ const inactiveUser = async (req, res) => {
 const bulkActivateUsers = async (req, res) => {
   try {
     let updateResult;
-    let selectedIds = req.body.items.map(item => item.id);
+    let selectedIds = req.body.items.map((item) => item.id);
     if (req.body.active) {
       updateResult = await ResultModel.updateMany(
         { _id: { $in: selectedIds }, active: false }, // Filter criteria
@@ -433,10 +433,7 @@ const addField = async (req, res) => {
       [
         {
           $set: {
-            grandMaster: {
-              lifetime: { leg: 0, match: 0 },
-              season: { leg: 0, match: 0 },
-            },
+            scheduleToken: "",
           },
         },
       ],

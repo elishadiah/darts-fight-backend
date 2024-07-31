@@ -494,11 +494,52 @@ const getGlobalCoin = async (req, res) => {
 
 const updateGlobalCoin = async (req, res) => {
   try {
-    const { globalCoin } = req.body;
-    await GlobalCoinModel.updateMany({}, [{ $set: { globalCoin } }], {
-      upsert: true,
+    const { balance } = req.body;
+
+    const updatedGlobalCoin = await GlobalCoinModel.updateMany(
+      {},
+      { $inc: { amount: balance } },
+      {
+        new: true,
+        upsert: true,
+      }
+    );
+
+    // Retrieve the updated value
+    const globalCoin = await GlobalCoinModel.findOne({});
+
+    res.status(200).send({
+      msg: "Global coin added successfully.",
+      value: globalCoin.amount,
     });
-    res.status(200).send("Global coin updated successfully.");
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
+const buyBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { balance } = req.body;
+    const user = await UserModel.findById(id);
+    if (!user) return res.status(404).send("User not found");
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        $inc: { customBalance: balance },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send({
+      msg: "Balance updated successfully.",
+      value: updatedUser.customBalance,
+    });
   } catch (error) {
     res.status(422).json(error);
     console.log(error);
@@ -508,22 +549,45 @@ const updateGlobalCoin = async (req, res) => {
 const updateBalance = async (req, res) => {
   try {
     const { id } = req.params;
-    const { balance } = req.body;
-    const user = await UserModel.findOneById(id);
+    const { balance, type } = req.body;
+    const user = await UserModel.findById(id);
     if (!user) return res.status(404).send("User not found");
 
-    await UserModel.findByIdAndUpdate(
-      user._id,
-      {
-        customBalance: balance,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    if (type === "default") {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        user._id,
+        {
+          $inc: { defaultBalance: balance },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
-    res.status(200).send("Balance updated successfully.");
+      res.status(200).send({
+        msg: "Balance updated successfully.",
+        value: updatedUser.defaultBalance,
+        type
+      });
+    } else {
+      const updatedUser = await UserModel.findByIdAndUpdate(
+        user._id,
+        {
+          $inc: { customBalance: balance },
+        },
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+      res.status(200).send({
+        msg: "Balance updated successfully.",
+        value: updatedUser.customBalance,
+        type
+      });
+    }
   } catch (error) {
     res.status(422).json(error);
     console.log(error);
@@ -533,7 +597,7 @@ const updateBalance = async (req, res) => {
 const getBalance = async (req, res) => {
   try {
     const { id } = req.params;
-    const user = await UserModel.findOneById(id);
+    const user = await UserModel.findById(id);
     if (!user) return res.status(404).send("User not found");
 
     res.status(200).send({
@@ -565,7 +629,8 @@ module.exports = {
   updateLastLoginDate,
   getLastLoginDate,
   getGlobalCoin,
-  updateBalance,
+  buyBalance,
   updateGlobalCoin,
   getBalance,
+  updateBalance,
 };

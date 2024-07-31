@@ -141,6 +141,14 @@ const ResultSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    quickToken: {
+      type: String,
+      default: "",
+    },
+    scheduleToken: {
+      type: String,
+      default: "",
+    }
   },
   { timestamps: true }
 );
