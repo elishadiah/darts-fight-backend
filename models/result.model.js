@@ -41,6 +41,10 @@ const ResultSchema = new Schema(
     master26: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
+    }, // lifetime total 26 master
+    breakfast: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
     },
     highFinish: {
       type: Array,
@@ -50,20 +54,29 @@ const ResultSchema = new Schema(
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       ],
     },
-    sentMonthChallengeNo: { type: Number, default: 0 },
-    sentWeekChallengeNo: { type: Number, default: 0 },
-    sentTotalChallengeNo: {
+    friendlyChallenger: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
     },
-    acceptMonthChallengeNo: { type: Number, default: 0 },
-    acceptWeekChallengeNo: { type: Number, default: 0 },
+    sentTotalChallengeNo: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    }, // lifetime total sent challenge
+    // acceptWeekChallengeNo: { type: Number, default: 0 },
     previousWin: { type: Boolean, default: false },
-    currentVictoryStreak: { type: Number, default: 0 },
-    seasonCurrentVictoryStreak: { type: Number, default: 0 },
-    maxVictoryStreak: { type: Number, default: 0 },
-    seasonMaxVictoryStreak: { type: Number, default: 0 },
+    currentVictoryStreak: { type: Number, default: 0 }, // lifetime current streak
+    seasonCurrentVictoryStreak: { type: Number, default: 0 }, // season current streak
+    maxVictoryStreak: { type: Number, default: 0 }, // lifetime max streak
+    seasonMaxVictoryStreak: { type: Number, default: 0 }, // season max streak
     totalWinNo: { type: Number, default: 0 },
+    victoryStreak: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
+    currentStreak: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     monthlyMaestro: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
@@ -148,7 +161,7 @@ const ResultSchema = new Schema(
     scheduleToken: {
       type: String,
       default: "",
-    }
+    },
   },
   { timestamps: true }
 );

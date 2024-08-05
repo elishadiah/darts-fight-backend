@@ -329,10 +329,17 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { customBalance: 0 } }], {
+    await UserModel.updateMany({}, [{ $set: { status: "offline" } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");
+
+    // const updateUsers = await UserModel.updateMany(
+    //   {},
+    //   { $unset: { socials: [] } }
+    // );
+
+    // res.status(200).json(updateUsers.modifiedCount + " document(s) deleted.");
   } catch (err) {
     console.log("Aggregate-->>", err);
     res.status(422).json(err);

@@ -35,10 +35,12 @@ async function resetSeasonProperties() {
           "grandMaster.match": 0,
           "grandMaster.leg": 0,
           "dartEnthusiast.season": 0,
-          "sentTotalChallengeNo.season": 0,
+          "friendlyChallenger.season": 0,
           "readyForIt.season": 0,
           "monthlyMaestro.season": 0,
+          "legendaryRivalry.$[].season": 0,
           seasonMaxVictoryStreak: 0,
+          seasonCurrentVictoryStreak: 0,
           level: 0,
         },
       }

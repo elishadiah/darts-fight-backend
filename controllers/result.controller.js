@@ -228,11 +228,7 @@ const adminUpdateResult = async (req, res) => {
       {
         master26: req.body.master26,
         highFinish: req.body.highFinish,
-        sentMonthChallengeNo: req.body.sentMonthChallengeNo,
-        sentWeekChallengeNo: req.body.sentWeekChallengeNo,
-        sentTotalChallengeNo: req.body.sentTotalChallengeNo,
-        acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
-        acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
+        friendlyChallenger: req.body.friendlyChallenger,
         currentVictoryStreak: req.body.currentVictoryStreak,
         seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
         maxVictoryStreak: req.body.maxVictoryStreak,
@@ -295,45 +291,49 @@ const adminUpdateResult = async (req, res) => {
 };
 
 const postResult = async (req, res) => {
-  const { username } = req.body;
+  const { data, token } = req.body;
+  const { username } = data;
   try {
     const existResult = await ResultModel.find({ username });
     if (!existResult) return res.status(404).json("Could not find result!");
+
+    console.log('-token-->>', token, '-->>>', existResult[0].quickToken);
+
+    if (existResult.quickToken !== token) {
+      return res.status(400).json("Invalid token!");
+    }
+
     const newResult = await ResultModel.findOneAndUpdate(
       {
-        username: req.body.username,
-        email: req.body.email,
+        username: data.username,
+        email: data.email,
       },
       {
-        master26: req.body.master26,
-        highFinish: req.body.highFinish,
-        sentMonthChallengeNo: req.body.sentMonthChallengeNo,
-        sentWeekChallengeNo: req.body.sentWeekChallengeNo,
-        sentTotalChallengeNo: req.body.sentTotalChallengeNo,
-        acceptMonthChallengeNo: req.body.acceptMonthChallengeNo,
-        acceptWeekChallengeNo: req.body.acceptWeekChallengeNo,
-        currentVictoryStreak: req.body.currentVictoryStreak,
-        seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
-        maxVictoryStreak: req.body.maxVictoryStreak,
-        seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
-        totalWinNo: req.body.totalWinNo,
-        pyramidClimber: req.body.pyramidClimber,
-        monthlyMaestro: req.body.monthlyMaestro,
-        challengeConqueror: req.body.challengeConqueror,
-        pyramidProtector: req.body.pyramidProtector,
-        legendaryRivalry: req.body.legendaryRivalry,
-        previousWin: req.body.previousWin,
-        ironDart: req.body.ironDart,
-        master180: req.body.master180,
-        consistentScorer: req.body.consistentScorer,
-        grandMaster: req.body.grandMaster,
-        maxMarksman: req.body.maxMarksman,
-        dartEnthusiast: req.body.dartEnthusiast,
-        readyForIt: req.body.readyForIt,
-        championChallenger: req.body.championChallenger,
-        level: req.body.level,
-        date: req.body.date,
-        summary: req.body.summary,
+        master26: data.master26,
+        highFinish: data.highFinish,
+        friendlyChallenger: data.friendlyChallenger,
+        currentVictoryStreak: data.currentVictoryStreak,
+        seasonCurrentVictoryStreak: data.seasonCurrentVictoryStreak,
+        maxVictoryStreak: data.maxVictoryStreak,
+        seasonMaxVictoryStreak: data.seasonMaxVictoryStreak,
+        totalWinNo: data.totalWinNo,
+        pyramidClimber: data.pyramidClimber,
+        monthlyMaestro: data.monthlyMaestro,
+        challengeConqueror: data.challengeConqueror,
+        pyramidProtector: data.pyramidProtector,
+        legendaryRivalry: data.legendaryRivalry,
+        previousWin: data.previousWin,
+        ironDart: data.ironDart,
+        master180: data.master180,
+        consistentScorer: data.consistentScorer,
+        grandMaster: data.grandMaster,
+        maxMarksman: data.maxMarksman,
+        dartEnthusiast: data.dartEnthusiast,
+        readyForIt: data.readyForIt,
+        championChallenger: data.championChallenger,
+        level: data.level,
+        date: data.date,
+        summary: data.summary,
         active: true,
       },
       { new: true, runValidators: true }
@@ -341,17 +341,17 @@ const postResult = async (req, res) => {
 
     await EventModel.create({
       eventType: "match",
-      user: req.body.username,
-      targetUser: req.body.targetUser,
+      user: data.username,
+      targetUser: data.targetUser,
       match: {
-        link: req.body.link,
-        user1Won: req.body.won,
-        user2Won: req.body.targetWon,
-        achievements: req.body.earnedAchievements,
+        link: data.link,
+        user1Won: data.won,
+        user2Won: data.targetWon,
+        achievements: data.earnedAchievements,
       },
     });
 
-    if (req.body.level === 6) {
+    if (data.level === 6) {
       const season = await SeasonModel.findOne().sort({ season: -1 });
       if (season) {
         const topMembers = season.topMembers;
@@ -433,7 +433,7 @@ const addField = async (req, res) => {
       [
         {
           $set: {
-            scheduleToken: "",
+            breakfast: { lifetime: 0, season: 0 },
           },
         },
       ],
@@ -445,7 +445,7 @@ const addField = async (req, res) => {
 
     // const updateResult = await ResultModel.updateMany(
     //   {},
-    //   { $unset: { grandMaster: "" } }
+    //   { $unset: { acceptWeekChallengeNo: 0 } }
     // );
 
     // res.status(200).json(updateResult.modifiedCount + " document(s) deleted.");

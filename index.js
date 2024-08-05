@@ -10,6 +10,7 @@ const NotificationModel = require("./models/notification.model.js");
 const ResultModel = require("./models/result.model.js");
 const UserModel = require("./models/user.model.js");
 const { sendEmailNotification } = require("./email.js");
+const { resetSeasonProperties } = require("./controllers/season.controller.js");
 
 const crypto = require("crypto");
 
@@ -127,6 +128,7 @@ connectToMongoDB().then(() => {
         status: session.status,
       });
     });
+    console.log("users-->>", users);
     socket.emit("users", users);
 
     socket.on("findUserByName", (data) => {
@@ -201,18 +203,41 @@ connectToMongoDB().then(() => {
 
           console.log("challenge--res>>", res);
 
+          sessionStore.saveSession(socket.sessionID, {
+            userID: fromId,
+            username: from,
+            connected: true,
+            status: "occupied",
+          });
+
+          sessionStore.saveSession(socket.sessionID, {
+            userID: toId,
+            username: to,
+            connected: true,
+            status: "occupied",
+          });
+
+          socket.broadcast.emit("statusUpdate", {
+            fromId,
+            toId,
+            status: "Occupied",
+          });
+
           socket.to(toId).emit("quick-notification", {
             notification: res,
             token,
-            toId,
+            to,
             fromId,
             paymentOption,
           });
+
         } catch (err) {
           console.log("challenge--err>>", err);
         }
       }
     );
+
+    console.log("all---users-->>", sessionStore.findAllSessions());
 
     socket.on("cancel-challenge", async ({ message, toId }) => {
       try {
@@ -225,9 +250,11 @@ connectToMongoDB().then(() => {
       }
     });
 
-    socket.on("quick-accept", ({ toId, paymentOption, token }) => {
+    socket.on("quick-accept", ({ toId, opponent, paymentOption, token }) => {
       console.log("quick-accept-->>", toId);
-      socket.to(toId).emit("quick-accept-response", { paymentOption, token });
+      socket
+        .to(toId)
+        .emit("quick-accept-response", { paymentOption, token, opponent });
     });
 
     socket.on("challenge-decline", async ({ message, to }) => {
@@ -318,7 +345,7 @@ connectToMongoDB().then(() => {
 
   cron.schedule("0 0 1 * *", async function () {
     try {
-      await saveSeason({}, { status: () => ({ json: () => {} }) });
+      await resetSeasonProperties();
       console.log("Season field reset successfully");
     } catch (err) {
       console.error("Failed to reset season field:", err);

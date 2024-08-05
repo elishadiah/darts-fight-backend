@@ -73,6 +73,11 @@ const UserSchema = mongoose.Schema(
       type: Number,
       default: 6,
     },
+    status: {
+      type: String,
+      enum: ["online", "offline", "occupied"],
+      default: "offline",
+    },
   },
   { timestamps: true }
 );
