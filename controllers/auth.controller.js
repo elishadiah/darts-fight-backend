@@ -321,7 +321,7 @@ const getAllUsers = async (req, res) => {
 
     if (!users) return res.status(404).json("Users not found");
 
-    res.status(200).json(users);
+    res.status(200).json({ users });
   } catch (err) {
     res.status(500).json(err);
   }
@@ -575,7 +575,7 @@ const updateBalance = async (req, res) => {
       res.status(200).send({
         msg: "Balance updated successfully.",
         value: updatedUser.defaultBalance,
-        type
+        type,
       });
     } else {
       const updatedUser = await UserModel.findByIdAndUpdate(
@@ -592,7 +592,7 @@ const updateBalance = async (req, res) => {
       res.status(200).send({
         msg: "Balance updated successfully.",
         value: updatedUser.customBalance,
-        type
+        type,
       });
     }
   } catch (error) {

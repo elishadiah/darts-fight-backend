@@ -8,6 +8,8 @@ const ScheduleSchema = new Schema(
     challengerEmail: { type: String, required: true },
     receiver: { type: String, required: true },
     receiverEmail: { type: String, required: true },
+    token: { type: String, required: true },
+    payment: { type: String, enum: ['payAll', 'payHalf'] },
   },
   { timestamps: true }
 );

@@ -45,6 +45,15 @@ async function resetSeasonProperties() {
         },
       }
     );
+
+    await UserModel.updateMany(
+      {},
+      {
+        $set: {
+          defaultBalance: 6,
+        },
+      }
+    );
   } catch (err) {
     console.log("Error resetting season properties: ", err);
   }

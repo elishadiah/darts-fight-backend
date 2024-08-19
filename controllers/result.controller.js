@@ -3,6 +3,7 @@ const ResultModel = require("../models/result.model");
 const EventModel = require("../models/events.model");
 const SeasonModel = require("../models/season.model");
 const GlobalCoinModel = require("../models/globalCoin.model");
+const ScheduleModel = require("../models/schedule.model");
 const axios = require("axios");
 
 const getSubResult = (req, res) => {
@@ -291,16 +292,46 @@ const adminUpdateResult = async (req, res) => {
 };
 
 const postResult = async (req, res) => {
-  const { data, token } = req.body;
+  const { data, token, type = "quick" } = req.body;
   const { username } = data;
   try {
     const existResult = await ResultModel.find({ username });
     if (!existResult) return res.status(404).json("Could not find result!");
 
-    console.log('-token-->>', token, '-->>>', existResult[0].quickToken);
+    const schedules = await ScheduleModel.find({
+      $or: [{ receiver: username }, { challenger: username }],
+    });
 
-    if (existResult.quickToken !== token) {
-      return res.status(400).json("Invalid token!");
+    console.log(
+      "-token-->>",
+      schedules,
+      "-->>>",
+      existResult[0].quickToken,
+      "==type-->>",
+      type
+    );
+
+    if (type === "quick") {
+      if (existResult[0].quickToken !== token) {
+        return res.status(400).json("Invalid token!");
+      }
+    } else {
+      if (isEmpty(schedules)) {
+        return res.status(400).json("No schedule found!");
+      }
+
+      let isValid = false;
+
+      schedules.forEach(async (schedule) => {
+        if (schedule.token === token) {
+          isValid = true;
+          return;
+        }
+      });
+
+      if (!isValid) {
+        return res.status(400).json("Invalid token!");
+      }
     }
 
     const newResult = await ResultModel.findOneAndUpdate(
@@ -377,6 +408,13 @@ const postResult = async (req, res) => {
           });
         }
       }
+    }
+
+    if (type === "schedule") {
+      schedules.forEach(async (schedule) => {
+        if (schedule.token === token)
+          await ScheduleModel.findByIdAndDelete(schedule._id);
+      });
     }
 
     res.status(200).json("Success!");

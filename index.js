@@ -77,38 +77,24 @@ connectToMongoDB().then(() => {
   const sessionStore = new InMemorySessionStore();
 
   socketIO.use((socket, next) => {
-    const sessionID = socket.handshake.auth.sessionID;
-    if (sessionID) {
-      const session = sessionStore.findSession(sessionID);
-      console.log("Session-->>>", session, sessionID, socket.handshake.auth);
-      if (session) {
-        socket.sessionID = sessionID;
-        socket.userID = session.userID;
-        socket.username = session.username;
-        return next();
-      }
-    }
+    const userID = socket.handshake.auth.userID;
     const username = socket.handshake.auth.username;
-    console.log("username-->>>", username, socket.handshake.auth);
+
     if (!username) {
       return next(new Error("invalid username"));
     }
-    socket.sessionID = socket.handshake.auth.sessionID;
-    socket.userID = socket.handshake.auth.sessionID;
-    socket.username = username;
-    next();
+
+    if (userID) {
+      socket.userID = userID;
+      socket.username = username;
+      return next();
+    }
   });
 
-  socketIO.on("connection", (socket) => {
+  socketIO.on("connection", async (socket) => {
     console.log(`⚡: ${socket.id} user just connected!`);
 
-    // persist session
-    sessionStore.saveSession(socket.sessionID, {
-      userID: socket.userID,
-      username: socket.username,
-      connected: true,
-      status: "online",
-    });
+    await UserModel.updateOne({ _id: socket.userID }, { status: "online" });
 
     // emit session details
     socket.emit("user_id", {
@@ -119,18 +105,13 @@ connectToMongoDB().then(() => {
     socket.join(socket.userID);
 
     // fetch existing users
-    const users = [];
-    sessionStore.findAllSessions().forEach((session) => {
-      users.push({
-        userID: session.userID,
-        username: session.username,
-        connected: session.connected,
-        status: session.status,
-      });
+    const users = await UserModel.find({
+      status: { $in: ["online", "occupied"] },
     });
-    console.log("users-->>", users);
+
     socket.emit("users", users);
 
+    // Top players challenge
     socket.on("findUserByName", (data) => {
       const { username } = data;
       console.log("find--user--byname-->>", username);
@@ -144,6 +125,34 @@ connectToMongoDB().then(() => {
       }
     });
 
+    socket.on("top-challenge", async ({ message, challenger, receiver }) => {
+      const cUser = UserModel.findOne({ username: challenger });
+      const rUser = UserModel.findOne({ username: receiver });
+
+      if (cUser && rUser) {
+        const notification = new NotificationModel({
+          message,
+          to: rUser._id,
+        });
+        notification.save();
+
+        await UserModel.updateMany(
+          { username: { $in: [challenger, receiver] } },
+          { status: "occupied" }
+        );
+
+        const updatedUsersList = await UserModel.find({
+          username: { $in: [receiver, challenger] },
+        });
+
+        socket.broadcast.emit("statusUpdate", {
+          updatedUsersList,
+        });
+
+        socket.to(rUser._id).emit("top-challenge-response", { notification });
+      }
+    });
+
     NotificationModel.find({ to: socket.userID, read: false }).then(
       (notifications) => {
         socket.emit("notifications", notifications);
@@ -154,7 +163,6 @@ connectToMongoDB().then(() => {
     socket.broadcast.emit("user connected", {
       userID: socket.userID,
       username: socket.username,
-      connected: true,
       status: "online",
     });
 
@@ -201,26 +209,17 @@ connectToMongoDB().then(() => {
 
           const res = await notification.save();
 
-          console.log("challenge--res>>", res);
+          await UserModel.updateMany(
+            { username: { $in: [to, from] } },
+            { status: "occupied" }
+          );
 
-          sessionStore.saveSession(socket.sessionID, {
-            userID: fromId,
-            username: from,
-            connected: true,
-            status: "occupied",
-          });
-
-          sessionStore.saveSession(socket.sessionID, {
-            userID: toId,
-            username: to,
-            connected: true,
-            status: "occupied",
+          const updatedUsersList = await UserModel.find({
+            username: { $in: [to, from] },
           });
 
           socket.broadcast.emit("statusUpdate", {
-            fromId,
-            toId,
-            status: "Occupied",
+            updatedUsersList,
           });
 
           socket.to(toId).emit("quick-notification", {
@@ -230,20 +229,37 @@ connectToMongoDB().then(() => {
             fromId,
             paymentOption,
           });
-
         } catch (err) {
           console.log("challenge--err>>", err);
         }
       }
     );
 
-    console.log("all---users-->>", sessionStore.findAllSessions());
-
-    socket.on("cancel-challenge", async ({ message, toId }) => {
+    socket.on("cancel-challenge", async ({ message, toId, fromId }) => {
       try {
-        const res = await NotificationModel.create({ message, to: toId });
+        const notification = new NotificationModel({
+          message,
+          to: toId,
+          read: false,
+        });
+        const res = await notification.save();
+
+        await UserModel.updateMany(
+          { _id: { $in: [toId, fromId] } },
+          { status: "online" }
+        );
+
+        const updatedUsersList = await UserModel.find({
+          _id: { $in: [toId, fromId] },
+        });
+
+        socket.broadcast.emit("statusUpdate", {
+          updatedUsersList,
+        });
+
         socket.to(toId).emit("cancel-challenge-response", {
           notification: res,
+          fromId,
         });
       } catch (err) {
         console.log("cancel-challenge--err>>", err);
@@ -257,13 +273,47 @@ connectToMongoDB().then(() => {
         .emit("quick-accept-response", { paymentOption, token, opponent });
     });
 
-    socket.on("challenge-decline", async ({ message, to }) => {
+    socket.on("challenge-decline", async ({ message, to, from }) => {
       try {
-        const res = await NotificationModel.create({ message, to });
+        const notification = new NotificationModel({
+          message,
+          to,
+        });
+        const res = await notification.save();
 
-        socket.to(to).emit("challenge-decline-response", { notification: res });
+        await UserModel.updateMany(
+          { _id: { $in: [to, from] } },
+          { status: "online" }
+        );
+
+        const updatedUsersList = await UserModel.find({
+          _id: { $in: [to, from] },
+        });
+
+        socket.broadcast.emit("statusUpdate", {
+          updatedUsersList,
+        });
+
+        socket
+          .to(to)
+          .emit("challenge-decline-response", { notification: res, from });
       } catch (err) {
         console.log("challenge-decline--err>>", err);
+      }
+    });
+
+    socket.on("update-user-status", async ({ status, userID }) => {
+      try {
+        await UserModel.updateOne({ _id: userID }, { status });
+        const updatedUser = await UserModel.findById(userID);
+
+        const updatedUsersList = [updatedUser];
+
+        socket.broadcast.emit("statusUpdate", {
+          updatedUsersList,
+        });
+      } catch (err) {
+        console.log("update-user-status--err>>", err);
       }
     });
 
@@ -277,17 +327,24 @@ connectToMongoDB().then(() => {
         receiverEmail,
         challengerEmail,
         date,
+        paymentOption,
       }) => {
         const notification = new NotificationModel({ message, to });
         try {
           const res = await notification.save();
+
           socket.to(to).emit("notification", res);
+
+          const token = crypto.randomBytes(16).toString("hex");
+
           await ScheduleModel.create({
             date,
             challenger,
             challengerEmail,
             receiver,
             receiverEmail,
+            token,
+            payment: paymentOption,
           });
         } catch (err) {
           console.log("challenge--err>>", err);
@@ -295,38 +352,132 @@ connectToMongoDB().then(() => {
       }
     );
 
-    // notify users upon disconnection
-    socket.on("disconnect", async () => {
-      const matchingSockets = await socketIO.in(socket.userID).allSockets();
-      const isDisconnected = matchingSockets.size === 0;
-      if (isDisconnected) {
-        // notify other users
-        socket.broadcast.emit("user disconnected", socket.userID);
-        // update the connection status of the session
-        sessionStore.saveSession(socket.sessionID, {
-          userID: socket.userID,
-          username: socket.username,
-          connected: false,
-          status: "offline",
+    socket.on(
+      "schedule-create-challenge",
+      async ({ message, toId, fromId, to, from, token }) => {
+        const notification = new NotificationModel({ message, to: toId });
+        try {
+          const res = await notification.save();
+
+          await UserModel.updateMany(
+            { username: { $in: [to, from] } },
+            { status: "occupied" }
+          );
+
+          socket.to(toId).emit("notification", res);
+
+          // await UserModel.updateOne({ _id: userID }, { status });
+          const updatedUser = await UserModel.find({
+            username: { $in: [to, from] },
+          });
+
+          const updatedUsersList = updatedUser;
+
+          socket.broadcast.emit("statusUpdate", {
+            updatedUsersList,
+          });
+
+          socket
+            .to(toId)
+            .emit("schedule-create-challenge-response", { fromId, token });
+        } catch (err) {
+          console.log("challenge--err>>", err);
+        }
+      }
+    );
+
+    cron.schedule("* * * * *", async () => {
+      try {
+        const schedules = await ScheduleModel.find();
+        schedules.map(async (item) => {
+          const receiver = await UserModel.findOne({ username: item.receiver });
+          const challenger = await UserModel.findOne({
+            username: item.challenger,
+          });
+
+          if (
+            new Date() > addMinutes(item.date, -240) &&
+            new Date() < addMinutes(item.date, -239)
+          ) {
+            const message =
+              "There are less than 4 hours left until the game. If you cancel now, you will essentially lose the game. If you want to cancel, please cancel the scheduled challenge on the Profile page.";
+
+            const rnotification = new NotificationModel({
+              message,
+              to: receiver?._id.toString(),
+            });
+            const cnotification = new NotificationModel({
+              message,
+              to: receiver?._id.toString(),
+            });
+            const rres = await rnotification.save();
+            const cres = await cnotification.save();
+
+            if (receiver && challenger) {
+              socket
+                .to(receiver?._id.toString())
+                .to(challenger?._id.toString())
+                .emit("schedule-notification", {
+                  notification: rres,
+                });
+            }
+          } else if (
+            new Date() > addMinutes(item.date, -1) &&
+            new Date() < new Date(item.date)
+          ) {
+            console.log("Cron-schedule--notification1111-->>");
+            const message =
+              "It's time to start your upcoming challenge. Please create a challenge on your Profile page.";
+
+            const rnotification = new NotificationModel({
+              message,
+              to: receiver?._id.toString(),
+            });
+            const cnotification = new NotificationModel({
+              message,
+              to: receiver?._id.toString(),
+            });
+            const rres = await rnotification.save();
+            const cres = await cnotification.save();
+
+            if (receiver && challenger) {
+              socket
+                .to(receiver?._id.toString())
+                .to(challenger?._id.toString())
+                .emit("schedule-notification", {
+                  notification: rres,
+                });
+            }
+          }
+          // console.log("Cron-schedule111-->>");
         });
+      } catch (err) {
+        console.log("Cron-schedule-err-->>", err);
       }
     });
 
-    // Update status to 'Occupied' when user is challenging another user
-    // socket.on("challenge", (data) => {
-    //   console.log("Challenge-->>", data);
+    // notify users upon disconnection
+    socket.on("disconnect", async () => {
+      try {
+        const matchingSockets = await socketIO.in(socket.userID).allSockets();
+        const isDisconnected = matchingSockets.size === 0;
+        if (isDisconnected) {
+          await UserModel.updateOne(
+            { _id: socket.userID },
+            { status: "offline" }
+          );
 
-    //   socketIO.emit("challengeResponse", {
-    //     user: data.receiver,
-    //     challenger: data.challenger,
-    //     challengerEmail: data.challengerEmail,
-    //   });
-    //   socketIO.emit("statusUpdate", {
-    //     receiver: data.receiver,
-    //     challenger: data.challenger,
-    //     status: "Occupied",
-    //   });
-    // });
+          // notify other users
+          socket.broadcast.emit("user disconnected", {
+            userID: socket.userID,
+            username: socket.username,
+            status: "offline",
+          });
+        }
+      } catch (err) {
+        console.log("disconnect--err>>", err);
+      }
+    });
   });
 
   const addMinutes = (date, minutes) => {
