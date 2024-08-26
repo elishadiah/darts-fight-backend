@@ -9,8 +9,9 @@ const ScheduleModel = require("./models/schedule.model.js");
 const NotificationModel = require("./models/notification.model.js");
 const ResultModel = require("./models/result.model.js");
 const UserModel = require("./models/user.model.js");
+const SeasonModel = require("./models/season.model.js");
 const { sendEmailNotification } = require("./email.js");
-const { resetSeasonProperties } = require("./controllers/season.controller.js");
+const { resetSeasonProperties, adminSeason } = require("./controllers/season.controller.js");
 
 const crypto = require("crypto");
 
@@ -26,8 +27,6 @@ const ScheduleRoute = require("./routes/schedule.route.js");
 const EventRoute = require("./routes/event.route.js");
 const NotificationRoute = require("./routes/notification.route.js");
 const SeasonRoute = require("./routes/season.route.js");
-
-const { saveSeason } = require("./controllers/season.controller.js");
 
 mongoose.set("bufferCommands", false);
 mongoose.set("bufferTimeoutMS", 20000);
@@ -494,21 +493,27 @@ connectToMongoDB().then(() => {
     }
   };
 
-  cron.schedule("0 0 1 * *", async function () {
-    try {
-      await resetSeasonProperties();
-      console.log("Season field reset successfully");
-    } catch (err) {
-      console.error("Failed to reset season field:", err);
-    }
-  });
+  // cron.schedule("0 0 1 * *", async function () {
+  //   try {
+  //     await resetSeasonProperties();
+  //     console.log("Season field reset successfully");
+  //   } catch (err) {
+  //     console.error("Failed to reset season field:", err);
+  //   }
+  // });
 
   cron.schedule("0 0 * * *", async function () {
+    const currentDate = new Date();
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const oneMonthAgo = new Date();
     oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
     try {
+      const lastSeason = await SeasonModel.findOne().sort({ season: -1 });
+      if (lastSeason && lastSeason.seasonEnd < currentDate) {
+        await adminSeason();
+      }
+
       const result = await ResultModel.updateMany(
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
         { $set: { active: false } } // Update operation: sets the active field to false

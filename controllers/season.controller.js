@@ -79,6 +79,8 @@ const saveSeason = async (req, res) => {
 const adminSeason = async (req, res) => {
   try {
     const currentDate = new Date();
+    const seasonEndDate = new Date();
+    seasonEndDate.setDate(currentDate.getDate() + 30);
 
     const currentSeason = await SeasonModel.findOne().sort({ season: -1 });
 
@@ -96,6 +98,7 @@ const adminSeason = async (req, res) => {
 
     const newSeason = new SeasonModel({
       seasonStart: currentDate,
+      seasonEnd: seasonEndDate,
       activeUsers,
     });
 

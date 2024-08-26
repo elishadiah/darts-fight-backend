@@ -10,6 +10,21 @@ const postEvent = async (req, res) => {
   }
 };
 
+const findLastMatch = async (req, res) => {
+  const userName = req.query.userName || "";
+  try {
+    const event = await Event.find({
+      eventType: "match",
+      $or: [{ user: userName }, { targetUser: userName }],
+    })
+      .sort({ date: -1 })
+      .limit(1);
+    res.status(200).json(event);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 const getEvent = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
@@ -52,4 +67,4 @@ const getEvent = async (req, res) => {
   }
 };
 
-module.exports = { postEvent, getEvent };
+module.exports = { postEvent, getEvent, findLastMatch };
