@@ -23,6 +23,7 @@ const EventSchema = new Schema(
         "cancel",
         "match",
         "quick-token",
+        "schedule-accept",
       ],
     },
     user: { type: String },
@@ -36,6 +37,7 @@ const EventSchema = new Schema(
         achievements: [],
       },
     },
+    token: { type: String, default: "" },
   },
   { timestamps: true }
 );
