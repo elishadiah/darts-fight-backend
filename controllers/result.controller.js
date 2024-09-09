@@ -454,6 +454,16 @@ const bulkActivateUsers = async (req, res) => {
       );
     }
 
+    const activeUsers = await ResultModel.find({ active: true });
+
+    const season = await SeasonModel.findOne().sort({ season: -1 });
+
+    if (season) {
+      await SeasonModel.findByIdAndUpdate(season._id, {
+        activeUsers: activeUsers?.length,
+      });
+    }
+
     // Respond with the number of documents updated
     res
       .status(200)
