@@ -78,6 +78,18 @@ const UserSchema = mongoose.Schema(
       enum: ["online", "offline", "occupied"],
       default: "offline",
     },
+    xp: {
+      type: Number,
+      default: 0,
+    },
+    isFirstLogin: {
+      type: Boolean,
+      default: true,
+    },
+    rank: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

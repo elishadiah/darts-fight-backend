@@ -11,7 +11,11 @@ const ResultModel = require("./models/result.model.js");
 const UserModel = require("./models/user.model.js");
 const SeasonModel = require("./models/season.model.js");
 const { sendEmailNotification } = require("./email.js");
-const { resetSeasonProperties, adminSeason } = require("./controllers/season.controller.js");
+const {
+  resetSeasonProperties,
+  adminSeason,
+} = require("./controllers/season.controller.js");
+const { updateXPAndRank } = require("./controllers/auth.controller.js");
 
 const crypto = require("crypto");
 
@@ -225,9 +229,13 @@ connectToMongoDB().then(() => {
             notification: res,
             token,
             to,
+            from,
             fromId,
             paymentOption,
           });
+
+          const challenger = await UserModel.findOne({ username: from });
+          updateXPAndRank(challenger._id, 20);
         } catch (err) {
           console.log("challenge--err>>", err);
         }
@@ -265,11 +273,14 @@ connectToMongoDB().then(() => {
       }
     });
 
-    socket.on("quick-accept", ({ toId, opponent, paymentOption, token }) => {
+    socket.on("quick-accept", async ({ toId, opponent, challenger, paymentOption, token }) => {
       console.log("quick-accept-->>", toId);
       socket
         .to(toId)
         .emit("quick-accept-response", { paymentOption, token, opponent });
+      
+        const user = await UserModel.findOne({ username: opponent });
+        updateXPAndRank(user._id, 20);
     });
 
     socket.on("challenge-decline", async ({ message, to, from }) => {
@@ -513,6 +524,8 @@ connectToMongoDB().then(() => {
       if (lastSeason && lastSeason.seasonEnd < currentDate) {
         await adminSeason();
       }
+
+      await UserModel.updateMany({}, { isFirstLogin: true });
 
       const result = await ResultModel.updateMany(
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week

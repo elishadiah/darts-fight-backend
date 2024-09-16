@@ -8,6 +8,27 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { sendEmailNotification } = require("../email.js");
 
+const rankThresholds = [500, 1500, 3000, 6000, 10000, 15000];
+const rankBonuses = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
+
+const updateXPAndRank = async (userId, xpToAdd) => {
+  const user = await UserModel.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  const bonus = rankBonuses[user.rank] || 0;
+  user.xp += xpToAdd + bonus * xpToAdd;
+
+  for (let i = rankThresholds.length - 1; i >= 0; i--) {
+    if (user.xp >= rankThresholds[i]) {
+      user.rank = i + 1;
+      break;
+    }
+  }
+
+  await user.save();
+  return user;
+};
+
 // Register new user
 const registerUser = async (req, res) => {
   const { username, email, avatar, password } = req.body;
@@ -89,6 +110,12 @@ const loginUser = async (req, res) => {
 
     user.lastLoginDate = new Date();
     await user.save();
+
+    if (user.isFirstLogin) {
+      await updateXPAndRank(user._id, 10);
+      user.isFirstLogin = false;
+      await user.save();
+    }
 
     await EventModel.create({
       eventType: "login",
@@ -329,7 +356,7 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { status: "offline" } }], {
+    await UserModel.updateMany({}, [{ $set: { isFirstLogin: true } }], {
       upsert: false,
     });
     res.status(200).json("Add success!");
@@ -617,6 +644,26 @@ const getBalance = async (req, res) => {
   }
 };
 
+// Update user xp and rank
+const updateUserXPAndRank = async (req, res) => {
+  try {
+    const { username, xpToAdd } = req.body;
+    const user = await UserModel.findOne({ username: username });
+    if (!user) return res.status(404).send("User not found");
+
+    console.log("username, xpToAdd-->>>", user);
+
+    updateXPAndRank(user._id, xpToAdd);
+
+    res.status(200).send({
+      msg: "XP and Rank updated successfully."
+    });
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdminUser,
@@ -640,4 +687,6 @@ module.exports = {
   updateGlobalCoin,
   getBalance,
   updateBalance,
+  updateXPAndRank,
+  updateUserXPAndRank,
 };
