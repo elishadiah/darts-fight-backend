@@ -11,6 +11,69 @@ const { sendEmailNotification } = require("../email.js");
 const rankThresholds = [500, 1500, 3000, 6000, 10000, 15000];
 const rankBonuses = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
 
+const vAvatars = [
+  {
+    title: "Virtual Avatar 01",
+    ranks: 1,
+    xp: 500,
+    img: "RANKAVATAR1",
+    scoring: 30,
+    checkout: 0.5,
+    edge: 0,
+    bullseye: 0.5,
+  },
+  {
+    title: "Virtual Avatar 02",
+    ranks: 2,
+    xp: 1500,
+    img: "RANKAVATAR2",
+    scoring: 50,
+    checkout: 1,
+    edge: 0.5,
+    bullseye: 1,
+  },
+  {
+    title: "Virtual Avatar 03",
+    ranks: 3,
+    xp: 3000,
+    img: "RANKAVATAR3",
+    scoring: 70,
+    checkout: 1.5,
+    edge: 1,
+    bullseye: 1.5,
+  },
+  {
+    title: "Virtual Avatar 04",
+    ranks: 4,
+    xp: 6000,
+    img: "RANKAVATAR4",
+    scoring: 90,
+    checkout: 2,
+    edge: 1.5,
+    bullseye: 2,
+  },
+  {
+    title: "Virtual Avatar 05",
+    ranks: 5,
+    xp: 10000,
+    img: "RANKAVATAR5",
+    scoring: 110,
+    checkout: 2.5,
+    edge: 2,
+    bullseye: 2.5,
+  },
+  {
+    title: "Virtual Avatar 06",
+    ranks: 6,
+    xp: 15000,
+    img: "RANKAVATAR6",
+    scoring: 130,
+    checkout: 3,
+    edge: 2.5,
+    bullseye: 3,
+  },
+];
+
 const updateXPAndRank = async (userId, xpToAdd) => {
   const user = await UserModel.findById(userId);
   if (!user) throw new Error("User not found");
@@ -21,6 +84,28 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
     if (user.xp >= rankThresholds[i]) {
       user.rank = i + 1;
+      switch (user.rank) {
+        case 1:
+          user.vAvatar = { ...vAvatars[0], isLocked: false, isSelected: true };
+          break;
+        case 2:
+          user.vAvatar = { ...vAvatars[1], isLocked: false, isSelected: true };
+          break;
+        case 3:
+          user.vAvatar = { ...vAvatars[2], isLocked: false, isSelected: true };
+          break;
+        case 4:
+          user.vAvatar = { ...vAvatars[3], isLocked: false, isSelected: true };
+          break;
+        case 5:
+          user.vAvatar = { ...vAvatars[4], isLocked: false, isSelected: true };
+          break;
+        case 6:
+          user.vAvatar = { ...vAvatars[5], isLocked: false, isSelected: true };
+          break;
+        default:
+          break;
+      }
       break;
     }
   }
@@ -356,9 +441,30 @@ const getAllUsers = async (req, res) => {
 
 const addField = async (req, res) => {
   try {
-    await UserModel.updateMany({}, [{ $set: { isFirstLogin: true } }], {
-      upsert: false,
-    });
+    await UserModel.updateMany(
+      {},
+      [
+        {
+          $set: {
+            vAvatar: {
+              title: "",
+              ranks: 0,
+              xp: 0,
+              img: "",
+              scoring: 20,
+              checkout: 0.2,
+              edge: 0,
+              bullseye: 0.1,
+              isLocked: false,
+              isSelected: true,
+            },
+          },
+        },
+      ],
+      {
+        upsert: false,
+      }
+    );
     res.status(200).json("Add success!");
 
     // const updateUsers = await UserModel.updateMany(
@@ -656,7 +762,7 @@ const updateUserXPAndRank = async (req, res) => {
     updateXPAndRank(user._id, xpToAdd);
 
     res.status(200).send({
-      msg: "XP and Rank updated successfully."
+      msg: "XP and Rank updated successfully.",
     });
   } catch (error) {
     res.status(422).json(error);

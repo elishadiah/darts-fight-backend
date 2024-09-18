@@ -11,10 +11,7 @@ const ResultModel = require("./models/result.model.js");
 const UserModel = require("./models/user.model.js");
 const SeasonModel = require("./models/season.model.js");
 const { sendEmailNotification } = require("./email.js");
-const {
-  resetSeasonProperties,
-  adminSeason,
-} = require("./controllers/season.controller.js");
+const { adminSeason } = require("./controllers/season.controller.js");
 const { updateXPAndRank } = require("./controllers/auth.controller.js");
 
 const crypto = require("crypto");
@@ -31,6 +28,7 @@ const ScheduleRoute = require("./routes/schedule.route.js");
 const EventRoute = require("./routes/event.route.js");
 const NotificationRoute = require("./routes/notification.route.js");
 const SeasonRoute = require("./routes/season.route.js");
+const ArenaRoute = require("./routes/arena.route.js");
 
 mongoose.set("bufferCommands", false);
 mongoose.set("bufferTimeoutMS", 20000);
@@ -273,15 +271,18 @@ connectToMongoDB().then(() => {
       }
     });
 
-    socket.on("quick-accept", async ({ toId, opponent, challenger, paymentOption, token }) => {
-      console.log("quick-accept-->>", toId);
-      socket
-        .to(toId)
-        .emit("quick-accept-response", { paymentOption, token, opponent });
-      
+    socket.on(
+      "quick-accept",
+      async ({ toId, opponent, challenger, paymentOption, token }) => {
+        console.log("quick-accept-->>", toId);
+        socket
+          .to(toId)
+          .emit("quick-accept-response", { paymentOption, token, opponent });
+
         const user = await UserModel.findOne({ username: opponent });
         updateXPAndRank(user._id, 20);
-    });
+      }
+    );
 
     socket.on("challenge-decline", async ({ message, to, from }) => {
       try {
@@ -513,6 +514,25 @@ connectToMongoDB().then(() => {
   //   }
   // });
 
+  cron.schedule("0 * * * *", async function () {
+    try {
+      await UserModel.updateMany(
+        { stamina: { $lt: 100 } },
+        { $inc: { stamina: 10 } }
+      );
+
+      // Ensure stamina does not exceed 100
+      await UserModel.updateMany(
+        { stamina: { $gt: 100 } },
+        { $set: { stamina: 100 } }
+      );
+
+      console.log("Stamina recovery executed successfully");
+    } catch (err) {
+      console.error("Failed to recover stamina:", err);
+    }
+  });
+
   cron.schedule("0 0 * * *", async function () {
     const currentDate = new Date();
     const oneWeekAgo = new Date();
@@ -636,4 +656,5 @@ connectToMongoDB().then(() => {
   app.use("/event", EventRoute);
   app.use("/notification", NotificationRoute);
   app.use("/season", SeasonRoute);
+  app.use("/arena", ArenaRoute);
 });

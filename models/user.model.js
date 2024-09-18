@@ -1,6 +1,53 @@
 const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
-const UserSchema = mongoose.Schema(
+const VirtualAvatarSchema = new Schema(
+  {
+    title: {
+      type: String,
+      required: true,
+    },
+    ranks: {
+      type: Number,
+      required: true,
+    },
+    xp: {
+      type: Number,
+      required: true,
+    },
+    img: {
+      type: String,
+      required: true,
+    },
+    scoring: {
+      type: Number,
+      default: 20,
+    },
+    checkout: {
+      type: Number,
+      default: 0.2,
+    },
+    edge: {
+      type: Number,
+      default: 0,
+    },
+    bullseye: {
+      type: Number,
+      default: 0.1,
+    },
+    isLocked: {
+      type: Boolean,
+      required: true,
+    },
+    isSelected: {
+      type: Boolean,
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
+const UserSchema = new Schema(
   {
     firstname: {
       type: String,
@@ -82,13 +129,39 @@ const UserSchema = mongoose.Schema(
       type: Number,
       default: 0,
     },
+    stamina: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 100,
+    },
     isFirstLogin: {
       type: Boolean,
       default: true,
     },
+    isArena: {
+      type: Boolean,
+      default: false,
+    },
     rank: {
       type: Number,
       default: 0,
+    },
+    vAvatar: {
+      type: VirtualAvatarSchema,
+      required: false,
+      default: () => ({
+        title: "",
+        ranks: 0,
+        xp: 0,
+        img: "",
+        scoring: 20,
+        checkout: 0.2,
+        edge: 0,
+        bullseye: 0.1,
+        isLocked: false,
+        isSelected: true,
+      }),
     },
   },
   { timestamps: true }
