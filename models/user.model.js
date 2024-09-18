@@ -5,7 +5,7 @@ const VirtualAvatarSchema = new Schema(
   {
     title: {
       type: String,
-      required: true,
+      default: "",
     },
     ranks: {
       type: Number,
@@ -17,7 +17,7 @@ const VirtualAvatarSchema = new Schema(
     },
     img: {
       type: String,
-      required: true,
+      default: "",
     },
     scoring: {
       type: Number,

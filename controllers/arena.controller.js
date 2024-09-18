@@ -115,6 +115,22 @@ const playSingleMatch = (player1, player2) => {
 };
 
 const playMatchSeries = async (player1, player2, arenaTitle) => {
+  const user1 = await UserModel.findById(player1._id);
+  const user2 = await UserModel.findById(player2._id);
+
+  if (user1.stamina < 10 || user2.stamina < 10) {
+    const arena = await ArenaModel.findOne({ title: arenaTitle });
+    arena.idleUsers.push(player1._id.toString());
+    arena.idleUsers.push(player2._id.toString());
+    await arena.save();
+    return;
+  }
+
+  user1.stamina -= 10;
+  await user1.save();
+  user2.stamina -= 10;
+  await user2.save();
+
   console.log(
     "Match series started between",
     player1.username,
@@ -159,13 +175,31 @@ const playMatchSeries = async (player1, player2, arenaTitle) => {
     results: matchResults,
     winner: overallWinner.username,
   });
+  arena.idleUsers.push(player1._id.toString());
+  arena.idleUsers.push(player2._id.toString());
   await arena.save();
+
+  await startMatch(user1, arenaTitle);
+  await startMatch(user2, arenaTitle);
+
+  if (overallWinner.username === player1.username) {
+    user1.isArena = true;
+    user2.isArena = false;
+    await user1.save();
+    await user2.save();
+  } else {
+    user1.isArena = false;
+    user2.isArena = true;
+    await user1.save();
+    await user2.save();
+  }
 
   return overallWinner;
 };
 
 const startMatch = async (user, arenaTitle) => {
   try {
+    if (user.stamina < 10) return;
     const arena = await ArenaModel.findOne({ title: arenaTitle });
     const userId = user._id.toString();
 
