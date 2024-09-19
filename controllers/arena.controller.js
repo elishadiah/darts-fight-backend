@@ -24,6 +24,21 @@ const getArenas = async (req, res) => {
   }
 };
 
+// Get arena by title
+const getArenaByTitle = async (req, res) => {
+  try {
+    const { title } = req.params;
+    const arena = await ArenaModel.findOne({ title });
+    if (!arena) {
+      return res.status(404).json({ message: "Arena not found" });
+    }
+
+    res.status(200).json(arena);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // Get joined users by arena title
 const getJoinedUsersByTitle = async (req, res) => {
   try {
@@ -33,7 +48,11 @@ const getJoinedUsersByTitle = async (req, res) => {
       return res.status(404).json({ message: "Arena not found" });
     }
 
-    res.status(200).json(arena.joinedUsers);
+    const joinedUsers = await UserModel.find({
+      _id: { $in: arena.joinedUsers },
+    });
+
+    res.status(200).json(joinedUsers);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -262,6 +281,7 @@ const startMatch = async (user, arenaTitle) => {
 const startArenaMatch = async (req, res) => {
   try {
     const { title, username } = req.params;
+    console.log("Starting match for", username, "in arena", title);
     const arena = await ArenaModel.findOne({ title });
     if (!arena) {
       return res.status(404).json({ message: "Arena not found" });
@@ -314,6 +334,7 @@ module.exports = {
   createArena,
   getArenas,
   getJoinedUsersByTitle,
+  getArenaByTitle,
   startArenaMatch,
   resetArena,
 };
