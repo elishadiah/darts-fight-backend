@@ -80,35 +80,41 @@ const updateXPAndRank = async (userId, xpToAdd) => {
 
   const bonus = rankBonuses[user.rank] || 0;
   const arenaBonus = user.isArena ? 0.1 : 0;
-  user.xp += xpToAdd + bonus * xpToAdd + arenaBonus * xpToAdd;
+  user.xp += Number(xpToAdd) * (1 + bonus + arenaBonus);
 
+  let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
     if (user.xp >= rankThresholds[i]) {
-      user.rank = i + 1;
-      switch (user.rank) {
-        case 1:
-          user.vAvatar = { ...vAvatars[0], isLocked: false, isSelected: true };
-          break;
-        case 2:
-          user.vAvatar = { ...vAvatars[1], isLocked: false, isSelected: true };
-          break;
-        case 3:
-          user.vAvatar = { ...vAvatars[2], isLocked: false, isSelected: true };
-          break;
-        case 4:
-          user.vAvatar = { ...vAvatars[3], isLocked: false, isSelected: true };
-          break;
-        case 5:
-          user.vAvatar = { ...vAvatars[4], isLocked: false, isSelected: true };
-          break;
-        case 6:
-          user.vAvatar = { ...vAvatars[5], isLocked: false, isSelected: true };
-          break;
-        default:
-          break;
-      }
+      newRank = i + 1;
       break;
     }
+  }
+
+  if (newRank > user.rank) {
+    user.rank = newRank;
+    user.vAvatar = {...vAvatars[user.rank], isLocked: false, isSelected: true};
+    // switch (user.rank) {
+    //   case 1:
+    //     user.vAvatar = { ...vAvatars[0], isLocked: false, isSelected: true };
+    //     break;
+    //   case 2:
+    //     user.vAvatar = { ...vAvatars[1], isLocked: false, isSelected: true };
+    //     break;
+    //   case 3:
+    //     user.vAvatar = { ...vAvatars[2], isLocked: false, isSelected: true };
+    //     break;
+    //   case 4:
+    //     user.vAvatar = { ...vAvatars[3], isLocked: false, isSelected: true };
+    //     break;
+    //   case 5:
+    //     user.vAvatar = { ...vAvatars[4], isLocked: false, isSelected: true };
+    //     break;
+    //   case 6:
+    //     user.vAvatar = { ...vAvatars[5], isLocked: false, isSelected: true };
+    //     break;
+    //   default:
+    //     break;
+    // }
   }
 
   await user.save();
@@ -771,6 +777,37 @@ const updateUserXPAndRank = async (req, res) => {
   }
 };
 
+// Handle Level Up skills
+const updateSkillLvl = async (req, res) => {
+  try {
+    const { userId, skill, requiredXp, incVal } = req.body;
+    const user = await UserModel.findById(userId);
+
+    if (!user) return res.status(404).send({ msg: "User not found" });
+
+    if (user.xp < requiredXp)
+      return res.status(400).send({ msg: "Insufficient XP to level up" });
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        $inc: { [`vAvatar.${skill}`]: incVal, xp: -requiredXp },
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send({
+      updatedUser,
+    });
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 module.exports = {
   loginUser,
   loginAdminUser,
@@ -796,4 +833,5 @@ module.exports = {
   updateBalance,
   updateXPAndRank,
   updateUserXPAndRank,
+  updateSkillLvl,
 };

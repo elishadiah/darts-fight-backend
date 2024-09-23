@@ -73,7 +73,7 @@ const applyEdge = (player1, player2) => {
   );
   let randomEdge = Math.random() * 100;
 
-  if (scoreDifference <= randomEdge) {
+  if (scoreDifference >= randomEdge) {
     return player1.edge > player2.edge ? player1 : player2;
   }
   return player1.remainingPoints < player2.remainingPoints ? player1 : player2;
@@ -108,11 +108,14 @@ const playSingleMatch = (player1, player2) => {
     const currentPlayer = turn % 2 === 0 ? challenger : opponent;
 
     const score = calculateScore(currentPlayer.scoring);
-    currentPlayer.remainingPoints -= Math.round(score);
-    if (turn % 2 === 0) {
-      player1Scores.push(Math.round(score));
-    } else {
-      player2Scores.push(Math.round(score));
+
+    if (currentPlayer.remainingPoints - Math.round(score) >= 0) {
+      currentPlayer.remainingPoints -= Math.round(score);
+      if (turn % 2 === 0) {
+        player1Scores.push(currentPlayer.remainingPoints);
+      } else {
+        player2Scores.push(currentPlayer.remainingPoints);
+      }
     }
 
     if (currentPlayer.remainingPoints < 100) {
@@ -310,6 +313,36 @@ const startArenaMatch = async (req, res) => {
   }
 };
 
+// Get match results by arena title
+const getMatchResultsByTitle = async (req, res) => {
+  try {
+    const { title } = req.params;
+    const { page = 1, limit = 6 } = req.query;
+    console.log("Getting match results for", title, '-->>', page, limit);
+
+    const arena = await ArenaModel.findOne({ title });
+
+    if (!arena) {
+      return res.status(404).json({ message: "Arena not found" });
+    }
+
+    // const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const matchResults = arena.matchResults.reverse().slice(0, endIndex);
+
+    res
+      .status(200)
+      .json({
+        matchResults,
+        currentPage: page,
+        totalPages: Math.ceil(arena.matchResults.length / limit),
+      });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 const resetArena = async (req, res) => {
   try {
     const { title } = req.params;
@@ -336,5 +369,6 @@ module.exports = {
   getJoinedUsersByTitle,
   getArenaByTitle,
   startArenaMatch,
+  getMatchResultsByTitle,
   resetArena,
 };

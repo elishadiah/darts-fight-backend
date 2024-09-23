@@ -5,6 +5,7 @@ const {
   getJoinedUsersByTitle,
   startArenaMatch,
   resetArena,
+  getMatchResultsByTitle,
   getArenaByTitle,
 } = require("../controllers/arena.controller.js");
 
@@ -16,5 +17,6 @@ router.get("/:title/users", getJoinedUsersByTitle);
 router.get("/match/:title/:username", startArenaMatch);
 router.get("/reset/:title", resetArena);
 router.get("/get/:title", getArenaByTitle);
+router.get("/get/results/:title", getMatchResultsByTitle);
 
 module.exports = router;

@@ -3,6 +3,7 @@ const ResultModel = require("../models/result.model");
 const EventModel = require("../models/events.model");
 const SeasonModel = require("../models/season.model");
 const GlobalCoinModel = require("../models/globalCoin.model");
+const UserModel = require("../models/user.model");
 const ScheduleModel = require("../models/schedule.model");
 const axios = require("axios");
 
@@ -211,6 +212,26 @@ const fetchAllResult = async (req, res) => {
   try {
     const result = await ResultModel.find();
     res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+const fetchAllResultsAndUsers = async (req, res) => {
+  try {
+    let arr = [];
+    const result = await ResultModel.find();
+
+    if (result) {
+      for (const val of result) {
+        const user = await UserModel.findOne({ username: val.username });
+        if (user) {
+          arr.push({ ...val.toObject(), vAvatar: user.vAvatar });
+        }
+      }
+    }
+
+    res.status(200).json(arr);
   } catch (err) {
     res.status(500).json(err);
   }
@@ -544,4 +565,5 @@ module.exports = {
   adminUpdateResult,
   migrateField,
   bulkActivateUsers,
+  fetchAllResultsAndUsers,
 };

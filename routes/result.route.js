@@ -9,7 +9,8 @@ const {
   inactiveUser,
   adminUpdateResult,
   migrateField,
-  bulkActivateUsers
+  bulkActivateUsers,
+  fetchAllResultsAndUsers,
 } = require("../controllers/result.controller.js");
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.post('/inactive', inactiveUser);
 router.post('/admin-update', adminUpdateResult);
 router.post('/migrate', migrateField);
 router.post('/bulk-activate', bulkActivateUsers);
+router.get('/fetch-all-results-and-users', fetchAllResultsAndUsers);
 
 module.exports = router;

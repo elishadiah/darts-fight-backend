@@ -23,6 +23,7 @@ const {
   getBalance,
   updateBalance,
   updateUserXPAndRank,
+  updateSkillLvl,
 } = require("../controllers/auth.controller.js");
 
 const router = express.Router();
@@ -50,5 +51,6 @@ router.post('/buy-balance/:id', buyBalance);
 router.post('/update-balance/:id', updateBalance);
 router.get('/get-balance/:id', getBalance);
 router.post('/update-xp-and-rank', updateUserXPAndRank);
+router.post('/update-skill-lvl', updateSkillLvl)
 
 module.exports = router;
