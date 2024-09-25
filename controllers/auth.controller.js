@@ -79,8 +79,7 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   if (!user) throw new Error("User not found");
 
   const bonus = rankBonuses[user.rank] || 0;
-  const arenaBonus = user.isArena ? 0.1 : 0;
-  user.xp += Number(xpToAdd) * (1 + bonus + arenaBonus);
+  user.xp += Number(xpToAdd) * (1 + bonus);
 
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {

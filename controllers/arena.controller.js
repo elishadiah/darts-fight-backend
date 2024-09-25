@@ -206,12 +206,14 @@ const playMatchSeries = async (player1, player2, arenaTitle) => {
 
   if (overallWinner.username === player1.username) {
     user1.isArena = true;
+    user1.xp += 1 + user1.vAvatar.ranks;
     user2.isArena = false;
     await user1.save();
     await user2.save();
   } else {
     user1.isArena = false;
     user2.isArena = true;
+    user2.xp += 1 + user2.vAvatar.ranks;
     await user1.save();
     await user2.save();
   }
@@ -247,34 +249,10 @@ const startMatch = async (user, arenaTitle) => {
 
     if (idleUsers.length === 0) {
       return;
-      // const job = cron.schedule("* * * * * *", async () => {
-      //   try {
-      //     const updatedArena = await ArenaModel.findOne({ title: arenaTitle });
-      //     const updatedArenaIdlesUsers = updatedArena.idleUsers.filter(
-      //       (idleUser) => idleUser !== userId
-      //     );
-      //     const updatedIdleUsers = await UserModel.find({
-      //       _id: {
-      //         $in: updatedArenaIdlesUsers,
-      //       },
-      //     });
-
-      //     if (updatedIdleUsers.length > 0) {
-      //       console.log("Idle user found, proceeding with match...");
-      //       job.stop();
-      //       await proceedWithMatch(updatedArena, updatedArenaIdlesUsers);
-      //     } else {
-      //       console.log("No idle users yet, waiting...");
-      //     }
-      //   } catch (err) {
-      //     console.error("Error during cron job execution:", err);
-      //   }
-      // });
-    } else {
-      console.log("Idle users found, proceeding with match...");
-      // Proceed with match logic here
-      await proceedWithMatch(arena, arenaIdlesUsers);
     }
+    console.log("Idle users found, proceeding with match...");
+    // Proceed with match logic here
+    await proceedWithMatch(arena, arenaIdlesUsers);
   } catch (err) {
     console.error("Error starting match:", err);
   }
@@ -318,7 +296,7 @@ const getMatchResultsByTitle = async (req, res) => {
   try {
     const { title } = req.params;
     const { page = 1, limit = 6 } = req.query;
-    console.log("Getting match results for", title, '-->>', page, limit);
+    console.log("Getting match results for", title, "-->>", page, limit);
 
     const arena = await ArenaModel.findOne({ title });
 
@@ -331,13 +309,11 @@ const getMatchResultsByTitle = async (req, res) => {
 
     const matchResults = arena.matchResults.reverse().slice(0, endIndex);
 
-    res
-      .status(200)
-      .json({
-        matchResults,
-        currentPage: page,
-        totalPages: Math.ceil(arena.matchResults.length / limit),
-      });
+    res.status(200).json({
+      matchResults,
+      currentPage: page,
+      totalPages: Math.ceil(arena.matchResults.length / limit),
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
