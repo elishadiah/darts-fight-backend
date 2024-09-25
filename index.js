@@ -467,6 +467,29 @@ connectToMongoDB().then(() => {
       }
     });
 
+    cron.schedule("0 * * * *", async function () {
+      try {
+        await UserModel.updateMany(
+          { stamina: { $lt: 100 } },
+          { $inc: { stamina: 10 } }
+        );
+
+        // Ensure stamina does not exceed 100
+        await UserModel.updateMany(
+          { stamina: { $gt: 100 } },
+          { $set: { stamina: 100 } }
+        );
+
+        const users = await UserModel.find();
+
+        socket.broadcast.emit("stamina-recovery", users);
+
+        console.log("Stamina recovery executed successfully", users[0]._id.toString());
+      } catch (err) {
+        console.error("Failed to recover stamina:", err);
+      }
+    });
+
     // notify users upon disconnection
     socket.on("disconnect", async () => {
       try {
@@ -513,25 +536,6 @@ connectToMongoDB().then(() => {
   //     console.error("Failed to reset season field:", err);
   //   }
   // });
-
-  cron.schedule("0 * * * *", async function () {
-    try {
-      await UserModel.updateMany(
-        { stamina: { $lt: 100 } },
-        { $inc: { stamina: 10 } }
-      );
-
-      // Ensure stamina does not exceed 100
-      await UserModel.updateMany(
-        { stamina: { $gt: 100 } },
-        { $set: { stamina: 100 } }
-      );
-
-      console.log("Stamina recovery executed successfully");
-    } catch (err) {
-      console.error("Failed to recover stamina:", err);
-    }
-  });
 
   cron.schedule("0 0 * * *", async function () {
     const currentDate = new Date();
