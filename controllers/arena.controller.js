@@ -139,11 +139,14 @@ const playMatchSeries = async (player1, player2, arenaTitle) => {
   const user1 = await UserModel.findById(player1._id);
   const user2 = await UserModel.findById(player2._id);
 
-  if (user1.stamina < 10 || user2.stamina < 10) {
+  console.log("Starting match series between", user1.username, "and", user2.username, '-->>', user2.stamina);
+
+  if (user2.stamina < 10) {
     const arena = await ArenaModel.findOne({ title: arenaTitle });
     arena.idleUsers.push(player1._id.toString());
     arena.idleUsers.push(player2._id.toString());
     await arena.save();
+    startMatch(user1, arenaTitle);
     return;
   }
 
@@ -195,6 +198,7 @@ const playMatchSeries = async (player1, player2, arenaTitle) => {
     player2: player2.username,
     results: matchResults,
     winner: overallWinner.username,
+    date: new Date(),
   });
   arena.idleUsers.push(player1._id.toString());
   arena.idleUsers.push(player2._id.toString());
@@ -250,15 +254,17 @@ const startMatch = async (user, arenaTitle) => {
       );
       await arena.save();
 
+      console.log("Match found between", user.username, "and", opponent.username);
+
       playMatchSeries(user, opponent, arenaTitle);
     };
 
     if (idleUsers.length === 0) {
       return;
+    } else {
+      console.log("Idle users found, proceeding with match...");
+      await proceedWithMatch(arena, arenaIdlesUsers);
     }
-    console.log("Idle users found, proceeding with match...");
-    // Proceed with match logic here
-    await proceedWithMatch(arena, arenaIdlesUsers);
   } catch (err) {
     console.error("Error starting match:", err);
   }

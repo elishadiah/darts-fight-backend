@@ -1,28 +1,6 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const ResultSchema = new Schema(
-  {
-    player1: {
-      type: String,
-      required: true,
-    },
-    player2: {
-      type: String,
-      required: true,
-    },
-    results: {
-      type: Array,
-      default: [],
-    },
-    winner: {
-      type: String,
-      required: true,
-    },
-  },
-  { timestamps: true }
-);
-
 const ArenaSchema = new Schema(
   {
     title: {
@@ -39,9 +17,7 @@ const ArenaSchema = new Schema(
     },
     matchResults: {
       type: Array,
-      default: [
-        ResultSchema,
-      ],
+      default: [],
     },
   },
   { timestamps: true }
