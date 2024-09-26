@@ -31,6 +31,7 @@ connectToMongoDB().then(() => {
   const sessionStore = new InMemorySessionStore();
 
   io.use(socketAuth);
+
   socketController(io, sessionStore, io);
-  scheduleTasks(io);
+  scheduleTasks();
 });

@@ -1,6 +1,5 @@
 const ArenaModel = require("../models/arena.model");
 const UserModel = require("../models/user.model");
-const cron = require("node-cron");
 
 // Create a new arena
 const createArena = async (req, res) => {
@@ -218,6 +217,13 @@ const playMatchSeries = async (player1, player2, arenaTitle) => {
     await user2.save();
   }
 
+  // io.emit("arena-match-results", {
+  //   player1: player1.username,
+  //   player2: player2.username,
+  //   results: matchResults,
+  //   winner: overallWinner.username,
+  // });
+
   return overallWinner;
 };
 
@@ -278,8 +284,11 @@ const startArenaMatch = async (req, res) => {
 
     if (!arena.joinedUsers.includes(userId)) {
       arena.joinedUsers.push(userId);
-      arena.idleUsers.push(userId);
+      await arena.save();
+    }
 
+    if (!arena.idleUsers.includes(userId)) {
+      arena.idleUsers.push(userId);
       await arena.save();
     }
 

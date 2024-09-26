@@ -6,6 +6,12 @@ const { updateXPAndRank } = require("../controllers/auth.controller.js");
 const crypto = require("crypto");
 const cron = require("node-cron");
 
+const addMinutes = (date, minutes) => {
+  const dateCopy = new Date(date);
+  dateCopy.setMinutes(dateCopy.getMinutes() + minutes);
+  return dateCopy;
+};
+
 const socketController = (socket, sessionStore, socketIO) => {
   socket.on("connection", async (socket) => {
     console.log(`⚡: ${socket.id} user just connected!`);
