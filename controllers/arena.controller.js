@@ -292,9 +292,13 @@ const startArenaMatch = async (req, res) => {
       await arena.save();
     }
 
+    if (user.stamina < 10) {
+      return res.status(400).json({ message: "You don't have enough stamina to play arena fight." });
+    }
+
     startMatch(user, title);
 
-    res.status(200).json({ message: "Match started" });
+    res.status(200).json({ message: "Arena Fight started" });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
@@ -337,8 +341,9 @@ const resetArena = async (req, res) => {
       return res.status(404).json({ message: "Arena not found" });
     }
 
-    arena.joinedUsers = [];
-    arena.idleUsers = [];
+    // arena.joinedUsers = [];
+    // arena.idleUsers = [];
+    arena.matchResults = [];
 
     await arena.save();
 

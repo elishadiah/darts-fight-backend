@@ -381,32 +381,6 @@ const socketController = (socket, sessionStore, socketIO) => {
       }
     });
 
-    cron.schedule("0 * * * *", async function () {
-      try {
-        await UserModel.updateMany(
-          { stamina: { $lt: 100 } },
-          { $inc: { stamina: 10 } }
-        );
-
-        // Ensure stamina does not exceed 100
-        await UserModel.updateMany(
-          { stamina: { $gt: 100 } },
-          { $set: { stamina: 100 } }
-        );
-
-        const users = await UserModel.find();
-
-        socket.broadcast.emit("stamina-recovery", users);
-
-        console.log(
-          "Stamina recovery executed successfully",
-          users[0]._id.toString()
-        );
-      } catch (err) {
-        console.error("Failed to recover stamina:", err);
-      }
-    });
-
     socket.on("disconnect", async () => {
       try {
         const matchingSockets = await socketIO.in(socket.userID).allSockets();

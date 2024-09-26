@@ -5,8 +5,8 @@ const http = require("http");
 const socketIO = require("socket.io");
 const connectToMongoDB = require("./config/db.js");
 const socketAuth = require("./middlewares/socketAuth.js");
-const socketController = require("./controllers/socket.controller.js");
 const scheduleTasks = require("./utils/scheduler.js");
+const socketController = require("./controllers/socket.controller.js");
 const routes = require("./routes");
 
 const app = express();
@@ -31,6 +31,8 @@ connectToMongoDB().then(() => {
   const sessionStore = new InMemorySessionStore();
 
   io.use(socketAuth);
+
+  module.exports = { io };
 
   socketController(io, sessionStore, io);
   scheduleTasks();
