@@ -151,12 +151,12 @@ const getResult = async (req, res) => {
       end,
     } = response.data;
 
-    const user1InitResult = allResult.find((val) =>
-      val.username.trim().toLowerCase().includes(p1_name.toLowerCase())
+    const user1InitResult = allResult.find(
+      (val) => val.username.trim().toLowerCase() === p1_name.toLowerCase()
     );
 
-    const user2InitResult = allResult.find((val) =>
-      val.username.trim().toLowerCase().includes(p2_name.toLowerCase())
+    const user2InitResult = allResult.find(
+      (val) => val.username.trim().toLowerCase() === p2_name.toLowerCase()
     );
 
     if (!user1InitResult || !user2InitResult) {
