@@ -32,8 +32,9 @@ connectToMongoDB().then(() => {
 
   io.use(socketAuth);
 
-  module.exports = { io };
+  // app.set("socketIo", io);
 
-  socketController(io, sessionStore, io);
+  socketController(io, sessionStore, io, app);
+
   scheduleTasks();
 });

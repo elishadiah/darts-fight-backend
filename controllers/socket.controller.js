@@ -12,14 +12,15 @@ const addMinutes = (date, minutes) => {
   return dateCopy;
 };
 
-const socketController = (socket, sessionStore, socketIO) => {
+const socketController = (socket, sessionStore, socketIO, app) => {
   socket.on("connection", async (socket) => {
-    console.log(`⚡: ${socket.id} user just connected!`);
+    console.log(`⚡: ${socket.username} user just connected!`);
 
     await UserModel.updateOne({ _id: socket.userID }, { status: "online" });
 
     socket.emit("user_id", { userID: socket.userID });
     socket.join(socket.userID);
+    app.set("socketIo", socket);
 
     const users = await UserModel.find({
       status: { $in: ["online", "occupied"] },
