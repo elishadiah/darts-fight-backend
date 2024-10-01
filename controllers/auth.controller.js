@@ -81,6 +81,8 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   const bonus = rankBonuses[user.rank] || 0;
   user.xp += Number(xpToAdd) * (1 + bonus);
 
+  console.log("user.xp-->>>", user.xp, '-->>>', xpToAdd, '-->>', bonus);
+
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
     if (user.xp >= rankThresholds[i]) {
@@ -92,28 +94,6 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   if (newRank > user.rank) {
     user.rank = newRank;
     user.vAvatar = {...vAvatars[user.rank], isLocked: false, isSelected: true};
-    // switch (user.rank) {
-    //   case 1:
-    //     user.vAvatar = { ...vAvatars[0], isLocked: false, isSelected: true };
-    //     break;
-    //   case 2:
-    //     user.vAvatar = { ...vAvatars[1], isLocked: false, isSelected: true };
-    //     break;
-    //   case 3:
-    //     user.vAvatar = { ...vAvatars[2], isLocked: false, isSelected: true };
-    //     break;
-    //   case 4:
-    //     user.vAvatar = { ...vAvatars[3], isLocked: false, isSelected: true };
-    //     break;
-    //   case 5:
-    //     user.vAvatar = { ...vAvatars[4], isLocked: false, isSelected: true };
-    //     break;
-    //   case 6:
-    //     user.vAvatar = { ...vAvatars[5], isLocked: false, isSelected: true };
-    //     break;
-    //   default:
-    //     break;
-    // }
   }
 
   await user.save();

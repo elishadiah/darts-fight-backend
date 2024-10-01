@@ -31,7 +31,7 @@ const scheduleTasks = () => {
         await adminSeason();
       }
 
-      await UserModel.updateMany({}, { isFirstLogin: true });
+      await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
 
       const result = await ResultModel.updateMany(
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
