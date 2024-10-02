@@ -86,14 +86,14 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
     if (user.xp >= rankThresholds[i]) {
-      newRank = i;
+      newRank = i + 1;
       break;
     }
   }
 
   if (newRank > user.rank) {
     user.rank = newRank;
-    user.vAvatar = {...vAvatars[user.rank], isLocked: false, isSelected: true};
+    user.vAvatar = {...vAvatars[user.rank - 1], isLocked: false, isSelected: true};
   }
 
   await user.save();
