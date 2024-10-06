@@ -220,14 +220,17 @@ const playMatchSeries = async (
   const noti = await notification1.save();
   await notification2.save();
 
-  socket.broadcast.emit("arena-match-results", {
-    player1: player1.username,
-    player2: player2.username,
-    results: matchResults,
-    winner: overallWinner.username,
-    date: new Date(),
-    notification: noti,
-  });
+  socket
+    .to(player1._id.toString())
+    .to(player2._id)
+    .emit("arena-match-results", {
+      player1: player1.username,
+      player2: player2.username,
+      results: matchResults,
+      winner: overallWinner.username,
+      date: new Date(),
+      notification: noti,
+    });
 
   const arena = await ArenaModel.findOne({ title: arenaTitle });
   arena.matchResults.push({
@@ -259,13 +262,6 @@ const playMatchSeries = async (
     await user1.save();
     await user2.save();
   }
-
-  // io.emit("arena-match-results", {
-  //   player1: player1.username,
-  //   player2: player2.username,
-  //   results: matchResults,
-  //   winner: overallWinner.username,
-  // });
 
   if (option === "Manual") {
     return res.status(200).json({
