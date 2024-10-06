@@ -136,7 +136,7 @@ const playSingleMatch = (player1, player2) => {
   return { winner, player1Scores, player2Scores };
 };
 
-const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
+const playMatchSeries = async (player1, player2, arenaTitle, socket, res) => {
   const user1 = await UserModel.findById(player1._id);
   const user2 = await UserModel.findById(player2._id);
 
@@ -148,15 +148,6 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
     "-->>",
     user2.stamina
   );
-
-  if (user2.stamina < 10) {
-    const arena = await ArenaModel.findOne({ title: arenaTitle });
-    arena.idleUsers.push(player1._id.toString());
-    arena.idleUsers.push(player2._id.toString());
-    await arena.save();
-    startMatch(user1, arenaTitle, socket);
-    return;
-  }
 
   user1.stamina -= 10;
   await user1.save();
@@ -219,7 +210,7 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
     read: false,
   });
 
-  const res = await notification1.save();
+  const noti = await notification1.save();
   await notification2.save();
 
   socket.broadcast.emit("arena-match-results", {
@@ -228,7 +219,7 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
     results: matchResults,
     winner: overallWinner.username,
     date: new Date(),
-    notification: res,
+    notification: noti,
   });
 
   const arena = await ArenaModel.findOne({ title: arenaTitle });
@@ -243,8 +234,8 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
   arena.idleUsers.push(player2._id.toString());
   await arena.save();
 
-  await startMatch(user1, arenaTitle, socket);
-  await startMatch(user2, arenaTitle, socket);
+  // await startMatch(user1, arenaTitle, socket);
+  // await startMatch(user2, arenaTitle, socket);
 
   if (overallWinner.username === player1.username) {
     user1.isArena = true;
@@ -267,16 +258,29 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket) => {
   //   winner: overallWinner.username,
   // });
 
-  return overallWinner;
+  return res.status(200).json({
+    player1: player1.username,
+    player2: player2.username,
+    results: matchResults,
+    winner: overallWinner.username,
+    date: new Date(),
+  });
 };
 
-const startMatch = async (user, arenaTitle, socket) => {
+const startMatch = async (user, arenaTitle, socket, res) => {
   try {
-    if (user.stamina < 10) return;
+    if (user.stamina < 10)
+      return res.status(400).json({
+        message: "You don't have enough stamina to play arena fight.",
+      });
+
     const arena = await ArenaModel.findOne({ title: arenaTitle });
     const userId = user._id.toString();
 
-    if (!arena.idleUsers.includes(userId)) return;
+    if (!arena.idleUsers.includes(userId))
+      return res
+        .status(400)
+        .json({ message: "You are not in the idle users list" });
 
     const arenaIdlesUsers = arena.idleUsers.filter(
       (idleUser) => idleUser !== userId
@@ -300,11 +304,20 @@ const startMatch = async (user, arenaTitle, socket) => {
         opponent.username
       );
 
-      playMatchSeries(user, opponent, arenaTitle, socket);
+      if (opponent.stamina < 10 || user.stamina < 10) {
+        const arena = await ArenaModel.findOne({ title: arenaTitle });
+        arena.idleUsers.push(user._id.toString());
+        arena.idleUsers.push(opponent._id.toString());
+        await arena.save();
+        startMatch(user, arenaTitle, socket, res);
+        return;
+      }
+
+      playMatchSeries(user, opponent, arenaTitle, socket, res);
     };
 
     if (idleUsers.length === 0) {
-      return;
+      return res.status(400).json({ message: "No idle users found" });
     } else {
       console.log("Idle users found, proceeding with match...");
       await proceedWithMatch(arena, arenaIdlesUsers);
@@ -332,7 +345,7 @@ const socketTest = async (socket) => {
   };
 
   idleUsers = removeRandomUser(idleUsers);
-}
+};
 
 // Start arena match
 const startArenaMatch = async (req, res) => {
@@ -371,7 +384,7 @@ const startArenaMatch = async (req, res) => {
     const socket = req.app.get("socketIo");
     // socket.broadcast.emit("arena-match-results", "test");
     // socketTest(socket);
-    startMatch(user, title, socket);
+    startMatch(user, title, socket, res);
 
     // io.on("connection", async (socket) => {
     //   if (!eventEmitted) {
@@ -379,7 +392,7 @@ const startArenaMatch = async (req, res) => {
     //   }
     // });
 
-    res.status(200).json({ message: "Arena Fight started" });
+    // res.status(200).json({ message: "Arena Fight started" });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
