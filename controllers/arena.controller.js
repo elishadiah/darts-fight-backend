@@ -136,7 +136,14 @@ const playSingleMatch = (player1, player2) => {
   return { winner, player1Scores, player2Scores };
 };
 
-const playMatchSeries = async (player1, player2, arenaTitle, socket, res) => {
+const playMatchSeries = async (
+  player1,
+  player2,
+  arenaTitle,
+  option,
+  socket,
+  res
+) => {
   const user1 = await UserModel.findById(player1._id);
   const user2 = await UserModel.findById(player2._id);
 
@@ -234,8 +241,10 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket, res) => {
   arena.idleUsers.push(player2._id.toString());
   await arena.save();
 
-  // await startMatch(user1, arenaTitle, socket);
-  // await startMatch(user2, arenaTitle, socket);
+  if (option === "Auto") {
+    startMatch(user1, arenaTitle, option, socket, res);
+    // startMatch(user2, arenaTitle, option, socket, res);
+  }
 
   if (overallWinner.username === player1.username) {
     user1.isArena = true;
@@ -258,16 +267,18 @@ const playMatchSeries = async (player1, player2, arenaTitle, socket, res) => {
   //   winner: overallWinner.username,
   // });
 
-  return res.status(200).json({
-    player1: player1.username,
-    player2: player2.username,
-    results: matchResults,
-    winner: overallWinner.username,
-    date: new Date(),
-  });
+  if (option === "Manual") {
+    return res.status(200).json({
+      player1: player1.username,
+      player2: player2.username,
+      results: matchResults,
+      winner: overallWinner.username,
+      date: new Date(),
+    });
+  }
 };
 
-const startMatch = async (user, arenaTitle, socket, res) => {
+const startMatch = async (user, arenaTitle, option, socket, res) => {
   try {
     if (user.stamina < 10)
       return res.status(400).json({
@@ -309,15 +320,19 @@ const startMatch = async (user, arenaTitle, socket, res) => {
         arena.idleUsers.push(user._id.toString());
         arena.idleUsers.push(opponent._id.toString());
         await arena.save();
-        startMatch(user, arenaTitle, socket, res);
+        startMatch(user, arenaTitle, option, socket, res);
         return;
       }
 
-      playMatchSeries(user, opponent, arenaTitle, socket, res);
+      playMatchSeries(user, opponent, arenaTitle, option, socket, res);
     };
 
     if (idleUsers.length === 0) {
-      return res.status(400).json({ message: "No idle users found" });
+      if (option === "Manual") {
+        return res.status(400).json({ message: "No idle users found" });
+      } else {
+        return;
+      }
     } else {
       console.log("Idle users found, proceeding with match...");
       await proceedWithMatch(arena, arenaIdlesUsers);
@@ -351,6 +366,7 @@ const socketTest = async (socket) => {
 const startArenaMatch = async (req, res) => {
   try {
     const { title, username } = req.params;
+    const { option } = req.body;
     console.log("Starting match for", username, "in arena", title);
     const arena = await ArenaModel.findOne({ title });
     if (!arena) {
@@ -384,7 +400,7 @@ const startArenaMatch = async (req, res) => {
     const socket = req.app.get("socketIo");
     // socket.broadcast.emit("arena-match-results", "test");
     // socketTest(socket);
-    startMatch(user, title, socket, res);
+    startMatch(user, title, option, socket, res);
 
     // io.on("connection", async (socket) => {
     //   if (!eventEmitted) {
@@ -392,7 +408,9 @@ const startArenaMatch = async (req, res) => {
     //   }
     // });
 
-    // res.status(200).json({ message: "Arena Fight started" });
+    if (option === "Auto") {
+      res.status(200).json({ message: "Arena Fight started" });
+    }
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
