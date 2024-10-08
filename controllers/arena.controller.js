@@ -201,9 +201,9 @@ const playMatchSeries = async (
   let message;
 
   if (overallWinner.username === player1.username) {
-    message = `${player1.username} won ${player1Wins} : ${player2Wins} in the Fight against ${player2.username} in the Sparring Arena.`;
+    message = `${player1.username} won ${player1Wins} : ${player2Wins} in the Fight against ${player2.username} in the Sparring Arena. ${player1.username} gets ${1 + user1.vAvatar.ranks} XP.`;
   } else {
-    message = `${player2.username} won ${player2Wins} : ${player1Wins} in the Fight against ${player1.username} in the Sparring Arena.`;
+    message = `${player2.username} won ${player2Wins} : ${player1Wins} in the Fight against ${player1.username} in the Sparring Arena. ${player2.username} gets ${1 + user2.vAvatar.ranks} XP.`;
   }
 
   const notification1 = new NotificationModel({
@@ -222,7 +222,7 @@ const playMatchSeries = async (
 
   socket
     .to(player1._id.toString())
-    .to(player2._id)
+    .to(player2._id.toString())
     .emit("arena-match-results", {
       player1: player1.username,
       player2: player2.username,
