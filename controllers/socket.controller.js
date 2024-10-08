@@ -353,7 +353,7 @@ const socketController = (socket, sessionStore, socketIO, app) => {
           ) {
             console.log("Cron-schedule--notification1111-->>");
             const message =
-              "It's time to start your upcoming challenge. Please create a challenge on your Profile page.";
+              "It's time to start your upcoming challenge. Please create a challenge on your Calendar in Profile page.";
 
             const rnotification = new NotificationModel({
               message,
