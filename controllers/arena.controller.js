@@ -270,6 +270,7 @@ const playMatchSeries = async (
       results: matchResults,
       winner: overallWinner.username,
       date: new Date(),
+      message,
     });
   }
 };
