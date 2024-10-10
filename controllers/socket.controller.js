@@ -69,11 +69,11 @@ const socketController = (socket, sessionStore, socketIO, app) => {
       }
     });
 
-    NotificationModel.find({ to: socket.userID, read: false }).then(
-      (notifications) => {
+    NotificationModel.find({ to: socket.userID, read: false })
+      .sort({ createdAt: -1 })
+      .then((notifications) => {
         socket.emit("notifications", notifications);
-      }
-    );
+      });
 
     // notify existing users
     socket.broadcast.emit("user connected", {
