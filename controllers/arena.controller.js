@@ -201,9 +201,21 @@ const playMatchSeries = async (
   let message;
 
   if (overallWinner.username === player1.username) {
-    message = `${player1.username} won ${player1Wins} : ${player2Wins} in the Fight against ${player2.username} in the Sparring Arena. ${player1.username} gets ${1 + user1.vAvatar.ranks} XP.`;
+    message = `${
+      player1.username
+    } won ${player1Wins} : ${player2Wins} in the Fight against ${
+      player2.username
+    } in the Sparring Arena. ${player1.username} gets ${
+      1 + user1.vAvatar.ranks
+    } XP.`;
   } else {
-    message = `${player2.username} won ${player2Wins} : ${player1Wins} in the Fight against ${player1.username} in the Sparring Arena. ${player2.username} gets ${1 + user2.vAvatar.ranks} XP.`;
+    message = `${
+      player2.username
+    } won ${player2Wins} : ${player1Wins} in the Fight against ${
+      player1.username
+    } in the Sparring Arena. ${player2.username} gets ${
+      1 + user2.vAvatar.ranks
+    } XP.`;
   }
 
   const notification1 = new NotificationModel({
@@ -417,8 +429,15 @@ const startArenaMatch = async (req, res) => {
 const getMatchResultsByTitle = async (req, res) => {
   try {
     const { title } = req.params;
-    const { page = 1, limit = 6 } = req.query;
-    console.log("Getting match results for", title, "-->>", page, limit);
+    const { page = 1, limit = 6, username = "" } = req.query;
+    console.log(
+      "Getting match results for",
+      title,
+      "-->>",
+      page,
+      limit,
+      username
+    );
 
     const arena = await ArenaModel.findOne({ title });
 
@@ -429,7 +448,13 @@ const getMatchResultsByTitle = async (req, res) => {
     // const startIndex = (page - 1) * limit;
     const endIndex = page * limit;
 
-    const matchResults = arena.matchResults.reverse().slice(0, endIndex);
+    const matchResults = arena.matchResults
+      .reverse()
+      .filter(
+        (result) =>
+          result.player1.includes(username) || result.player2.includes(username)
+      )
+      .slice(0, endIndex);
 
     res.status(200).json({
       matchResults,
