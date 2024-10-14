@@ -2,12 +2,19 @@ const SeasonModel = require("../models/season.model");
 const ResultModel = require("../models/result.model");
 const UserModel = require("../models/user.model");
 
-const getActiveUsers = async () => {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+// const getActiveUsers = async () => {
+//   const thirtyDaysAgo = new Date();
+//   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const activeUsers = await UserModel.countDocuments({
-    lastLoginDate: { $gte: thirtyDaysAgo },
+//   const activeUsers = await UserModel.countDocuments({
+//     lastLoginDate: { $gte: thirtyDaysAgo },
+//   });
+//   return activeUsers;
+// };
+
+const getActiveUsers = async () => {
+  const activeUsers = await ResultModel.countDocuments({
+    active: true,
   });
   return activeUsers;
 };
