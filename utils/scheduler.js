@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const ScheduleModel = require("../models/schedule.model.js");
 const UserModel = require("../models/user.model.js");
 const NotificationModel = require("../models/notification.model.js");
+const ResultModel = require("../models/result.model.js");
 const { sendEmailNotification } = require("../email.js");
 
 const addMinutes = (date, minutes) => {
@@ -26,12 +27,13 @@ const scheduleTasks = () => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
     try {
+      await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
+      console.log("isFirstLogin updated successfully");
+
       const lastSeason = await SeasonModel.findOne().sort({ season: -1 });
       if (lastSeason && lastSeason.seasonEnd < currentDate) {
         await adminSeason();
       }
-
-      await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
 
       const result = await ResultModel.updateMany(
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
