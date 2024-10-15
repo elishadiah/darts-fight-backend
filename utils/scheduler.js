@@ -3,6 +3,7 @@ const ScheduleModel = require("../models/schedule.model.js");
 const UserModel = require("../models/user.model.js");
 const NotificationModel = require("../models/notification.model.js");
 const ResultModel = require("../models/result.model.js");
+const CommunityModel = require("../models/community.model.js");
 const { sendEmailNotification } = require("../email.js");
 
 const addMinutes = (date, minutes) => {
@@ -20,6 +21,26 @@ const removeSchedule = async (id) => {
 };
 
 const scheduleTasks = () => {
+  cron.schedule("0 0 * * 1", async () => {
+    try {
+      await CommunityModel.updateMany(
+        {},
+        {
+          $set: {
+            checkoutCntWeek: 0,
+            fightsCntWeek: 0,
+            participantsWeek: [],
+          },
+        }
+      );
+      console.log(
+        "Weekly reset of checkoutCntWeek and participantsWeek completed."
+      );
+    } catch (error) {
+      console.error("Error during weekly reset:", error);
+    }
+  });
+
   cron.schedule("0 0 * * *", async function () {
     const currentDate = new Date();
     const oneWeekAgo = new Date();
@@ -29,6 +50,19 @@ const scheduleTasks = () => {
     try {
       await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
       console.log("isFirstLogin updated successfully");
+
+      await CommunityModel.updateMany(
+        {},
+        {
+          $set: {
+            fightsCntDay: 0,
+            participantsDay: [],
+          },
+        }
+      );
+      console.log(
+        "Daily reset of checkoutCntWeek and participantsWeek completed."
+      );
 
       const lastSeason = await SeasonModel.findOne().sort({ season: -1 });
       if (lastSeason && lastSeason.seasonEnd < currentDate) {

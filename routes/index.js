@@ -7,6 +7,7 @@ const EventRoute = require("./event.route.js");
 const NotificationRoute = require("./notification.route.js");
 const SeasonRoute = require("./season.route.js");
 const ArenaRoute = require("./arena.route.js");
+const CommunityRoute = require("./community.route.js");
 
 const router = express.Router();
 
@@ -18,5 +19,6 @@ router.use("/event", EventRoute);
 router.use("/notification", NotificationRoute);
 router.use("/season", SeasonRoute);
 router.use("/arena", ArenaRoute);
+router.use("/community", CommunityRoute);
 
 module.exports = router;
