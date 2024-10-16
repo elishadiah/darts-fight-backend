@@ -127,10 +127,47 @@ const mostFights = async (req, res) => {
       { $limit: 1 },
     ]);
 
-    res.status(200).json({ lifetime: lifetimeMostFights, season: mostEventsInDay });
+    res
+      .status(200)
+      .json({ lifetime: lifetimeMostFights, season: mostEventsInDay });
   } catch (err) {
     res.status(500).json(err);
   }
 };
 
-module.exports = { postEvent, getEvent, findLastMatch, mostFights };
+const getFightsPerDayInMonth = async (req, res) => {
+  try {
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() + 1,
+      0
+    );
+
+    const fightsPerDay = await EventModel.aggregate([
+      {
+        $match: {
+          eventType: "match",
+          date: { $gte: startOfMonth, $lte: endOfMonth },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    res.status(200).json(fightsPerDay);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+module.exports = { postEvent, getEvent, findLastMatch, mostFights, getFightsPerDayInMonth };
