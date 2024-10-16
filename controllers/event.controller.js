@@ -157,6 +157,15 @@ const getFightsPerDayInMonth = async (req, res) => {
       },
       {
         $group: {
+          _id: "$match.link",
+          uniqueEvents: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$uniqueEvents" },
+      },
+      {
+        $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
           count: { $sum: 1 },
         },
