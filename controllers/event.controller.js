@@ -67,4 +67,70 @@ const getEvent = async (req, res) => {
   }
 };
 
-module.exports = { postEvent, getEvent, findLastMatch };
+const mostFights = async (req, res) => {
+  try {
+    const startOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth(),
+      1
+    );
+    const endOfMonth = new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() + 1,
+      0
+    );
+
+    const mostEventsInDay = await EventModel.aggregate([
+      {
+        $match: {
+          eventType: "match",
+          date: { $gte: startOfMonth, $lte: endOfMonth },
+        },
+      },
+      {
+        $group: {
+          _id: "$match.link",
+          uniqueEvents: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$uniqueEvents" },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+
+    const lifetimeMostFights = await EventModel.aggregate([
+      { $match: { eventType: "match" } },
+      {
+        $group: {
+          _id: "$match.link",
+          uniqueEvents: { $first: "$$ROOT" },
+        },
+      },
+      {
+        $replaceRoot: { newRoot: "$uniqueEvents" },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ]);
+
+    res.status(200).json({ lifetime: lifetimeMostFights, season: mostEventsInDay });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+module.exports = { postEvent, getEvent, findLastMatch, mostFights };

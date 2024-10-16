@@ -5,6 +5,7 @@ const SeasonModel = require("../models/season.model");
 const GlobalCoinModel = require("../models/globalCoin.model");
 const UserModel = require("../models/user.model");
 const ScheduleModel = require("../models/schedule.model");
+const CommunityModel = require("../models/community.model");
 const axios = require("axios");
 
 const getSubResult = (req, res) => {
