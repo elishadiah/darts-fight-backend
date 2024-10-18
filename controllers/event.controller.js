@@ -135,24 +135,14 @@ const mostFights = async (req, res) => {
   }
 };
 
-const getFightsPerDayInMonth = async (req, res) => {
+const fightsPerDay = async (startDate, endDate) => {
   try {
-    const startOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth(),
-      1
-    );
-    const endOfMonth = new Date(
-      new Date().getFullYear(),
-      new Date().getMonth() + 1,
-      0
-    );
-
-    const fightsPerDay = await EventModel.aggregate([
+    console.log("startDate", startDate);
+    const fightsPerDayThisMonth = await EventModel.aggregate([
       {
         $match: {
           eventType: "match",
-          date: { $gte: startOfMonth, $lte: endOfMonth },
+          date: { $gte: startDate, $lte: endDate },
         },
       },
       {
@@ -168,15 +158,71 @@ const getFightsPerDayInMonth = async (req, res) => {
         $group: {
           _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
           count: { $sum: 1 },
+          users: { $addToSet: "$user" },
+          targetUsers: { $addToSet: "$targetUser" },
         },
       },
       { $sort: { _id: 1 } },
     ]);
 
-    res.status(200).json(fightsPerDay);
+    return fightsPerDayThisMonth;
   } catch (err) {
+    console.log(err);
+  }
+};
+
+const getFightsPerDayInMonth = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+    const startOfCurrentWeek = new Date(
+      now.setDate(now.getDate() - now.getDay())
+    );
+    const endOfCurrentWeek = new Date(
+      now.setDate(startOfCurrentWeek.getDate() + 6)
+    );
+    const startOfLastWeek = new Date(
+      startOfCurrentWeek.setDate(startOfCurrentWeek.getDate() - 7)
+    );
+    const endOfLastWeek = new Date(
+      startOfLastWeek.setDate(startOfLastWeek.getDate() + 6)
+    );
+
+    console.log("startOfMonth", startOfMonth);
+
+    const fightsPerDayThisMonth = await fightsPerDay(startOfMonth, endOfMonth);
+    const fightsPerDayLastMonth = await fightsPerDay(
+      startOfLastMonth,
+      endOfLastMonth
+    );
+    const fightsPerDayThisWeek = await fightsPerDay(
+      startOfCurrentWeek,
+      endOfCurrentWeek
+    );
+    const fightsPerDayLastWeek = await fightsPerDay(
+      startOfLastWeek,
+      endOfLastWeek
+    );
+
+    res.status(200).json({
+      currentMonth: fightsPerDayThisMonth,
+      lastMonth: fightsPerDayLastMonth,
+      currentWeek: fightsPerDayThisWeek,
+      lastWeek: fightsPerDayLastWeek,
+    });
+  } catch (err) {
+    console.log(err);
     res.status(500).json(err);
   }
 };
 
-module.exports = { postEvent, getEvent, findLastMatch, mostFights, getFightsPerDayInMonth };
+module.exports = {
+  postEvent,
+  getEvent,
+  findLastMatch,
+  mostFights,
+  getFightsPerDayInMonth,
+};

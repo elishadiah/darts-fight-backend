@@ -211,7 +211,7 @@ const fetchResult = async (req, res) => {
 
 const fetchAllResult = async (req, res) => {
   try {
-    const result = await ResultModel.find();
+    const result = await ResultModel.find().lean().exec();
     res.status(200).json(result);
   } catch (err) {
     res.status(500).json(err);
