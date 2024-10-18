@@ -220,19 +220,26 @@ const fetchAllResult = async (req, res) => {
 
 const fetchAllResultsAndUsers = async (req, res) => {
   try {
-    let arr = [];
-    const result = await ResultModel.find();
+    const results = await ResultModel.find();
 
-    if (result) {
-      for (const val of result) {
-        const user = await UserModel.findOne({ username: val.username });
-        if (user) {
-          arr.push({ ...val.toObject(), vAvatar: user.vAvatar });
-        }
-      }
+    if (results.length > 0) {
+      const usersPromises = results.map((result) =>
+        UserModel.findOne({ username: result.username })
+      );
+
+      const users = await Promise.all(usersPromises);
+
+      const combinedData = results.map((result, index) => {
+        const user = users[index];
+        return user
+          ? { ...result.toObject(), vAvatar: user.vAvatar, xp: user.xp }
+          : result.toObject();
+      });
+
+      res.status(200).json(combinedData);
+    } else {
+      res.status(200).json([]);
     }
-
-    res.status(200).json(arr);
   } catch (err) {
     res.status(500).json(err);
   }
