@@ -185,10 +185,10 @@ const getFightsPerDayInMonth = async (req, res) => {
       now.setDate(startOfCurrentWeek.getDate() + 6)
     );
     const startOfLastWeek = new Date(
-      startOfCurrentWeek.setDate(startOfCurrentWeek.getDate() - 7)
+      now.setDate(startOfCurrentWeek.getDate() - 7)
     );
     const endOfLastWeek = new Date(
-      startOfLastWeek.setDate(startOfLastWeek.getDate() + 6)
+      now.setDate(startOfLastWeek.getDate() + 6)
     );
 
     console.log("startOfMonth", startOfMonth);
