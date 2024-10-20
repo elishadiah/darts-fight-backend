@@ -390,6 +390,7 @@ const postResult = async (req, res) => {
         maxMarksman: data.maxMarksman,
         dartEnthusiast: data.dartEnthusiast,
         readyForIt: data.readyForIt,
+        throwCount: data.throwCount,
         championChallenger: data.championChallenger,
         level: data.level,
         date: data.date,

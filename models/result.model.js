@@ -134,6 +134,10 @@ const ResultSchema = new Schema(
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),
     },
+    throwCount: {
+      type: detailSchema,
+      default: () => ({ lifetime: 0, season: 0 }),
+    },
     championChallenger: { type: Boolean, default: false },
     level: { type: Number, default: 0 },
     summary: [
