@@ -325,7 +325,7 @@ const getFightsPerDayInMonth = async (req, res) => {
 // "100 Fights in 24 Hours" Challenge
 const getFightsDayApi = async (req, res) => {
   try {
-    const { participants, count } = await getFightsDay();
+    const { participants, fightsPerUser, count } = await getFightsDay();
 
     const regexArray = participants.map(
       (userName) => new RegExp(`^${userName}$`, "i")
@@ -334,7 +334,9 @@ const getFightsDayApi = async (req, res) => {
       username: { $in: regexArray },
     });
 
-    res.status(200).json({ participants: participantUsers, count });
+    res
+      .status(200)
+      .json({ participants: participantUsers, count, fightsPerUser });
   } catch (err) {
     console.log("fights-day-->>", err);
     res.status(500).json(err);
@@ -344,7 +346,7 @@ const getFightsDayApi = async (req, res) => {
 // "Project Mayhem Week"
 const getFightsWeekApi = async (req, res) => {
   try {
-    const { participants, count } = await getFightsWeek();
+    const { participants, fightsPerUser, count } = await getFightsWeek();
 
     const regexArray = participants.map(
       (userName) => new RegExp(`^${userName}$`, "i")
@@ -354,7 +356,9 @@ const getFightsWeekApi = async (req, res) => {
       username: { $in: regexArray },
     });
 
-    res.status(200).json({ participants: participantUsers, count });
+    res
+      .status(200)
+      .json({ participants: participantUsers, count, fightsPerUser });
   } catch (err) {
     res.status(500).json(err);
   }
