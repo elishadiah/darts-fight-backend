@@ -24,6 +24,7 @@ const EventSchema = new Schema(
         "match",
         "quick-token",
         "schedule-accept",
+        "community"
       ],
     },
     user: { type: String },

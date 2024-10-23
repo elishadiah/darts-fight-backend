@@ -1,4 +1,5 @@
 const EventModel = require("../models/events.model.js");
+const UserModel = require("../models/user.model.js");
 
 const postEvent = async (req, res) => {
   try {
@@ -293,6 +294,7 @@ const getFightsDayApi = async (req, res) => {
 
     res.status(200).json({ participants: participantUsers, count });
   } catch (err) {
+    console.log('fights-day-->>', err);
     res.status(500).json(err);
   }
 };
