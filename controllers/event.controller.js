@@ -155,11 +155,18 @@ const getFightsDay = async () => {
         participantsSet.add(targetUser?.toLowerCase())
       );
     });
-    console.log("Fights per day:", participantsSet);
+    console.log("Fights per day:", participantsSet, "--->>>>", fights);
+
+    const fightsPerUserInDay = await fightsPerUser(startOfDay, endOfDay);
+    console.log("Fights per user in day:", fightsPerUserInDay);
 
     const participantsArray = Array.from(participantsSet);
 
-    return { participants: participantsArray, count: fightsCount };
+    return {
+      participants: participantsArray,
+      fightsPerUser: fightsPerUserInDay,
+      count: fightsCount,
+    };
   } catch (err) {
     console.log("----->>", err);
   }
@@ -190,9 +197,19 @@ const getFightsWeek = async () => {
     });
     console.log("Fights per week:", participantsSetWeek);
 
+    const fightsPerUserInWeek = await fightsPerUser(
+      startOfCurrentWeek,
+      endOfCurrentWeek
+    );
+    console.log("Fights per user in week:", fightsPerUserInWeek);
+
     const participantsArray = Array.from(participantsSetWeek);
 
-    return { participants: participantsArray, count: fightsCountWeek };
+    return {
+      participants: participantsArray,
+      fightsPerUser: fightsPerUserInWeek,
+      count: fightsCountWeek,
+    };
   } catch (err) {
     console.log("----->>", err);
   }
@@ -229,6 +246,31 @@ const fightsPerDay = async (startDate, endDate) => {
     ]);
 
     return fightsPerDayThisMonth;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const fightsPerUser = async (startDate, endDate) => {
+  try {
+    console.log("startDate", startDate);
+    const fightsPerUser = await EventModel.aggregate([
+      {
+        $match: {
+          eventType: "match",
+          date: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$user",
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]);
+
+    return fightsPerUser;
   } catch (err) {
     console.log(err);
   }
@@ -294,7 +336,7 @@ const getFightsDayApi = async (req, res) => {
 
     res.status(200).json({ participants: participantUsers, count });
   } catch (err) {
-    console.log('fights-day-->>', err);
+    console.log("fights-day-->>", err);
     res.status(500).json(err);
   }
 };

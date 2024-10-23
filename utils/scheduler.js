@@ -59,7 +59,7 @@ const scheduleTasks = () => {
       console.log("isFirstLogin updated successfully");
 
       // "100 Fights in 24 Hours" Challenge
-      const { participants, count } = await getFightsDay();
+      const { participants, fightsPerUser, count } = await getFightsDay();
       if (count >= 100) {
         const regexArray = participants.map(
           (userName) => new RegExp(`^${userName}$`, "i")
