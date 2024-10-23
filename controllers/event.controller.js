@@ -135,6 +135,68 @@ const mostFights = async (req, res) => {
   }
 };
 
+const getFightsDay = async () => {
+  try {
+    // Get all fights of the day
+    const date = new Date();
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    const fights = await fightsPerDay(startOfDay, endOfDay);
+
+    let fightsCount = 0;
+    let participantsSet = new Set();
+    fights.forEach((fight) => {
+      fightsCount += fight.count;
+      fight.users.forEach((user) => participantsSet.add(user?.toLowerCase()));
+      fight.targetUsers.forEach((targetUser) =>
+        participantsSet.add(targetUser?.toLowerCase())
+      );
+    });
+    console.log("Fights per day:", participantsSet);
+
+    const participantsArray = Array.from(participantsSet);
+
+    return { participants: participantsArray, count: fightsCount };
+  } catch (err) {
+    console.log("----->>", err);
+  }
+};
+
+const getFightsWeek = async () => {
+  try {
+    // Get all fights of the week
+    const now = new Date();
+    const startOfCurrentWeek = new Date(
+      now.setDate(now.getDate() - now.getDay())
+    );
+    const endOfCurrentWeek = new Date(
+      now.setDate(startOfCurrentWeek.getDate() + 6)
+    );
+    const fightsWeek = await fightsPerDay(startOfCurrentWeek, endOfCurrentWeek);
+
+    let fightsCountWeek = 0;
+    let participantsSetWeek = new Set();
+    fightsWeek.forEach((fight) => {
+      fightsCountWeek += fight.count;
+      fight.users.forEach((user) =>
+        participantsSetWeek.add(user?.toLowerCase())
+      );
+      fight.targetUsers.forEach((targetUser) =>
+        participantsSetWeek.add(targetUser?.toLowerCase())
+      );
+    });
+    console.log("Fights per week:", participantsSetWeek);
+
+    const participantsArray = Array.from(participantsSetWeek);
+
+    return { participants: participantsArray, count: fightsCountWeek };
+  } catch (err) {
+    console.log("----->>", err);
+  }
+};
+
 const fightsPerDay = async (startDate, endDate) => {
   try {
     console.log("startDate", startDate);
@@ -187,9 +249,7 @@ const getFightsPerDayInMonth = async (req, res) => {
     const startOfLastWeek = new Date(
       now.setDate(startOfCurrentWeek.getDate() - 7)
     );
-    const endOfLastWeek = new Date(
-      now.setDate(startOfLastWeek.getDate() + 6)
-    );
+    const endOfLastWeek = new Date(now.setDate(startOfLastWeek.getDate() + 6));
 
     console.log("startOfMonth", startOfMonth);
 
@@ -219,10 +279,52 @@ const getFightsPerDayInMonth = async (req, res) => {
   }
 };
 
+// "100 Fights in 24 Hours" Challenge
+const getFightsDayApi = async (req, res) => {
+  try {
+    const { participants, count } = await getFightsDay();
+
+    const regexArray = participants.map(
+      (userName) => new RegExp(`^${userName}$`, "i")
+    );
+    const participantUsers = await UserModel.find({
+      username: { $in: regexArray },
+    });
+
+    res.status(200).json({ participants: participantUsers, count });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// "Project Mayhem Week"
+const getFightsWeekApi = async (req, res) => {
+  try {
+    const { participants, count } = await getFightsWeek();
+
+    const regexArray = participants.map(
+      (userName) => new RegExp(`^${userName}$`, "i")
+    );
+
+    const participantUsers = await UserModel.find({
+      username: { $in: regexArray },
+    });
+
+    res.status(200).json({ participants: participantUsers, count });
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 module.exports = {
   postEvent,
   getEvent,
   findLastMatch,
   mostFights,
+  fightsPerDay,
   getFightsPerDayInMonth,
+  getFightsWeek,
+  getFightsDay,
+  getFightsDayApi,
+  getFightsWeekApi,
 };

@@ -511,7 +511,7 @@ const addField = async (req, res) => {
       [
         {
           $set: {
-            breakfast: { lifetime: 0, season: 0 },
+            throwCount: { lifetime: 0, season: 0 },
           },
         },
       ],

@@ -45,6 +45,7 @@ async function resetSeasonProperties() {
           "friendlyChallenger.season": 0,
           "readyForIt.season": 0,
           "monthlyMaestro.season": 0,
+          "throwCount.season": 0,
           "legendaryRivalry.$[].season": 0,
           seasonMaxVictoryStreak: 0,
           seasonCurrentVictoryStreak: 0,

@@ -5,6 +5,10 @@ const NotificationModel = require("../models/notification.model.js");
 const ResultModel = require("../models/result.model.js");
 const CommunityModel = require("../models/community.model.js");
 const { sendEmailNotification } = require("../email.js");
+const {
+  getFightsDay,
+  getFightsWeek,
+} = require("../controllers/event.controller.js");
 
 const addMinutes = (date, minutes) => {
   const dateCopy = new Date(date);
@@ -23,19 +27,21 @@ const removeSchedule = async (id) => {
 const scheduleTasks = () => {
   cron.schedule("0 0 * * 1", async () => {
     try {
-      await CommunityModel.updateMany(
-        {},
-        {
-          $set: {
-            checkoutCntWeek: 0,
-            fightsCntWeek: 0,
-            participantsWeek: [],
-          },
-        }
-      );
-      console.log(
-        "Weekly reset of checkoutCntWeek and participantsWeek completed."
-      );
+      // "Project Mayhem Week"
+      const { participants: participantsWeek, count: countWeek } =
+        await getFightsWeek();
+
+      if (countWeek >= 500) {
+        const regexArray = participantsWeek.map(
+          (userName) => new RegExp(`^${userName}$`, "i")
+        );
+        await UserModel.updateMany(
+          { username: { $in: regexArray } },
+          { $inc: { xp: 500 } }
+        );
+
+        console.log("Project Mayhem Week executed successfully");
+      }
     } catch (error) {
       console.error("Error during weekly reset:", error);
     }
@@ -48,27 +54,31 @@ const scheduleTasks = () => {
     const oneMonthAgo = new Date();
     oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
     try {
+      // Update all users to isFirstLogin: true
       await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
       console.log("isFirstLogin updated successfully");
 
-      await CommunityModel.updateMany(
-        {},
-        {
-          $set: {
-            fightsCntDay: 0,
-            participantsDay: [],
-          },
-        }
-      );
-      console.log(
-        "Daily reset of checkoutCntWeek and participantsWeek completed."
-      );
+      // "100 Fights in 24 Hours" Challenge
+      const { participants, count } = await getFightsDay();
+      if (count >= 100) {
+        const regexArray = participants.map(
+          (userName) => new RegExp(`^${userName}$`, "i")
+        );
+        await UserModel.updateMany(
+          { username: { $in: regexArray } },
+          { $inc: { xp: 100 } }
+        );
 
+        console.log("100 Fights in 24 Hours executed successfully");
+      }
+
+      // seaseon restart if last season is over
       const lastSeason = await SeasonModel.findOne().sort({ season: -1 });
       if (lastSeason && lastSeason.seasonEnd < currentDate) {
         await adminSeason();
       }
 
+      // inactive users after one month
       const result = await ResultModel.updateMany(
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
         { $set: { active: false } } // Update operation: sets the active field to false
@@ -76,6 +86,7 @@ const scheduleTasks = () => {
 
       console.log("inactive documents:", result.modifiedCount);
 
+      // down level users after one week
       const documents = await ResultModel.find({
         updatedAt: { $lt: oneWeekAgo },
         level: { $in: [4, 5, 6] },
@@ -153,6 +164,7 @@ const scheduleTasks = () => {
 
   cron.schedule("* * * * *", async () => {
     try {
+      // Send notifications for upcoming challenges
       const schedules = await ScheduleModel.find();
       schedules.map((item) => {
         if (
