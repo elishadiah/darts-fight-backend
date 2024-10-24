@@ -276,6 +276,36 @@ const fightsPerUser = async (startDate, endDate) => {
   }
 };
 
+const getWinsPerUser = async (startDate, endDate) => {
+  try {
+    console.log("startDate", startDate);
+    const winsPerUser = await EventModel.aggregate([
+      {
+        $match: {
+          eventType: "match",
+          date: { $gte: startDate, $lte: endDate },
+        },
+      },
+      {
+        $group: {
+          _id: "$user",
+          count: { $sum: 1 },
+          userWins: {
+            $sum: {
+              $cond: [{ $gt: ["$match.user1Won", "$match.user2Won"] }, 1, 0],
+            },
+          },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    return winsPerUser;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 const getFightsPerDayInMonth = async (req, res) => {
   try {
     const now = new Date();
@@ -364,6 +394,21 @@ const getFightsWeekApi = async (req, res) => {
   }
 };
 
+// Perfect Checkout Challenge
+const getWinsPerUserAPI = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOf48Hours = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const endOf48Hours = now;
+    const winsPerUserLast48Hours = await getWinsPerUser(startOf48Hours, endOf48Hours);
+
+    res.status(200).json({ winsPerUserLast48Hours });
+  } catch (err) {
+    res.status(500).json(err);
+    console.log(err);
+  }
+};
+
 module.exports = {
   postEvent,
   getEvent,
@@ -375,4 +420,5 @@ module.exports = {
   getFightsDay,
   getFightsDayApi,
   getFightsWeekApi,
+  getWinsPerUserAPI,
 };

@@ -7,6 +7,7 @@ const {
   getFightsPerDayInMonth,
   getFightsDayApi,
   getFightsWeekApi,
+  getWinsPerUserAPI,
 } = require("../controllers/event.controller.js");
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.get("/most-fights", mostFights);
 router.get("/fights-per-day-in-month", getFightsPerDayInMonth);
 router.get("/fights-day", getFightsDayApi);
 router.get("/fights-week", getFightsWeekApi);
+router.get("/wins-per-user", getWinsPerUserAPI);
 
 module.exports = router;
