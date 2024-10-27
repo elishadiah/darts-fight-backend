@@ -166,6 +166,26 @@ const ResultSchema = new Schema(
       type: String,
       default: "",
     },
+    isCheckout: {
+      type: Boolean,
+      default: false,
+    },
+    isTheUndergroundChampion: {
+      type: Boolean,
+      default: false,
+    },
+    isProjectMayhemWeek: {
+      type: Boolean,
+      default: false,
+    },
+    isJacksVictory: {
+      type: Boolean,
+      default: false,
+    },
+    isJacksRewarded: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

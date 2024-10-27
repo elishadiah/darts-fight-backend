@@ -27,14 +27,14 @@ connectToMongoDB().then(() => {
 
   app.use("", routes);
 
-  const { InMemorySessionStore } = require("./sessionStore.js");
-  const sessionStore = new InMemorySessionStore();
-
   io.use(socketAuth);
 
-  // app.set("socketIo", io);
+  io.on("connection", (socket) => {
+    socketController(socket, io, app);
+  });
 
-  socketController(io, sessionStore, io, app);
+  scheduleTasks(io);
 
-  scheduleTasks();
 });
+
+module.exports = io;

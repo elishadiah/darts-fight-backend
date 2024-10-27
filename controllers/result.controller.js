@@ -504,6 +504,36 @@ const bulkActivateUsers = async (req, res) => {
   }
 };
 
+// Jacks Victory Achievement and XP
+const jacksVictoryAchievement = async (req, res) => {
+  try {
+    const { username } = req.body;
+
+    const result = await ResultModel.findOne({ username });
+
+    if (!result) {
+      return res.status(404).json("User not found!");
+    }
+
+    await ResultModel.findByIdAndUpdate(result._id, {
+      isJacksVictory: true,
+    });
+
+    const user = await UserModel.findOne({ username });
+
+    if (user) {
+      await UserModel.findByIdAndUpdate(user._id, {
+        $inc: { xp: 50 },
+      });
+    }
+
+    res.status(200).json("Jacks Victory achievement added successfully!");
+  } catch (err) {
+    console.log("Error in jacksVictoryAchievement-->>", err);
+    res.status(422).json(err);
+  }
+};
+
 const addField = async (req, res) => {
   try {
     await ResultModel.updateMany(
@@ -511,7 +541,7 @@ const addField = async (req, res) => {
       [
         {
           $set: {
-            throwCount: { lifetime: 0, season: 0 },
+            isJacksRewarded: false,
           },
         },
       ],
@@ -575,4 +605,5 @@ module.exports = {
   migrateField,
   bulkActivateUsers,
   fetchAllResultsAndUsers,
+  jacksVictoryAchievement,
 };

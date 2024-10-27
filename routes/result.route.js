@@ -11,6 +11,7 @@ const {
   migrateField,
   bulkActivateUsers,
   fetchAllResultsAndUsers,
+  jacksVictoryAchievement,
 } = require("../controllers/result.controller.js");
 
 const router = express.Router();
@@ -26,5 +27,6 @@ router.post('/admin-update', adminUpdateResult);
 router.post('/migrate', migrateField);
 router.post('/bulk-activate', bulkActivateUsers);
 router.get('/fetch-all-results-and-users', fetchAllResultsAndUsers);
+router.post('/jacks-victory', jacksVictoryAchievement);
 
 module.exports = router;

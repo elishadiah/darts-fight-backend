@@ -1,5 +1,6 @@
 const EventModel = require("../models/events.model.js");
 const UserModel = require("../models/user.model.js");
+const ResultModel = require("../models/result.model.js");
 
 const postEvent = async (req, res) => {
   try {
@@ -400,9 +401,29 @@ const getWinsPerUserAPI = async (req, res) => {
     const now = new Date();
     const startOf48Hours = new Date(now.getTime() - 48 * 60 * 60 * 1000);
     const endOf48Hours = now;
-    const winsPerUserLast48Hours = await getWinsPerUser(startOf48Hours, endOf48Hours);
+    const winsPerUserLast48Hours = await getWinsPerUser(
+      startOf48Hours,
+      endOf48Hours
+    );
 
-    res.status(200).json({ winsPerUserLast48Hours });
+    const userNames = winsPerUserLast48Hours.map((user) => user._id);
+    const userResults = await ResultModel.find(
+      { username: { $in: userNames } }
+    );
+
+    // Map the isJacksVictory field to the response
+    const response = winsPerUserLast48Hours.map((user) => {
+      const userResult = userResults.find(
+        (result) => result.username === user._id
+      );
+      return {
+        ...user,
+        isJacksVictory: userResult ? userResult.isJacksVictory : false,
+        isJacksRewarded: userResult ? userResult.isJacksRewarded : false,
+      };
+    });
+
+    res.status(200).json({ winsPerUserLast48Hours: response });
   } catch (err) {
     res.status(500).json(err);
     console.log(err);
@@ -418,6 +439,7 @@ module.exports = {
   getFightsPerDayInMonth,
   getFightsWeek,
   getFightsDay,
+  getWinsPerUser,
   getFightsDayApi,
   getFightsWeekApi,
   getWinsPerUserAPI,
