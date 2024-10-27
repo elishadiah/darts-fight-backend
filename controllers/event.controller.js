@@ -395,7 +395,7 @@ const getFightsWeekApi = async (req, res) => {
   }
 };
 
-// Perfect Checkout Challenge
+// "Jacks Victory" Challenge
 const getWinsPerUserAPI = async (req, res) => {
   try {
     const now = new Date();
@@ -407,9 +407,35 @@ const getWinsPerUserAPI = async (req, res) => {
     );
 
     const userNames = winsPerUserLast48Hours.map((user) => user._id);
-    const userResults = await ResultModel.find(
-      { username: { $in: userNames } }
+    const oldResults = await ResultModel.find({
+      username: { $in: userNames },
+    });
+
+    await Promise.all(
+      winsPerUserLast48Hours.map(async (user) => {
+        if (user?.userWins >= 10) {
+          await ResultModel.updateOne(
+            { username: user._id },
+            { isJacksVictory: true }
+          );
+        }
+      })
     );
+
+    await Promise.all(
+      winsPerUserLast48Hours.map(async (user) => {
+        if (user?.userWins >= 10) {
+          await UserModel.updateOne(
+            { username: user._id },
+            { $inc: { xp: 50 } }
+          );
+        }
+      })
+    );
+
+    const userResults = await ResultModel.find({
+      username: { $in: userNames },
+    });
 
     // Map the isJacksVictory field to the response
     const response = winsPerUserLast48Hours.map((user) => {
@@ -421,6 +447,21 @@ const getWinsPerUserAPI = async (req, res) => {
         isJacksVictory: userResult ? userResult.isJacksVictory : false,
         isJacksRewarded: userResult ? userResult.isJacksRewarded : false,
       };
+    });
+
+    const socket = req.app.get("socketIo");
+
+    const oldVictoryFalseSet = new Set(
+      oldResults
+        .filter((result) => !result.isJacksVictory)
+        .map((result) => result.username)
+    );
+
+    // Emit the event to the client
+    response.forEach((user) => {
+      if (user.isJacksVictory && oldVictoryFalseSet.has(user._id)) {
+        socket.emit("jacks-victory", { username: user._id });
+      }
     });
 
     res.status(200).json({ winsPerUserLast48Hours: response });

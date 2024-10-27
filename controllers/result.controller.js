@@ -527,6 +527,10 @@ const jacksVictoryAchievement = async (req, res) => {
       });
     }
 
+    const socket = req.app.get("socketIo");
+
+    socket.emit("jacks-victory", { username });
+
     res.status(200).json("Jacks Victory achievement added successfully!");
   } catch (err) {
     console.log("Error in jacksVictoryAchievement-->>", err);
