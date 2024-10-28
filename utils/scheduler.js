@@ -60,6 +60,12 @@ const scheduleTasks = (socketIO) => {
         );
 
         console.log("Project Mayhem Week executed successfully");
+
+        // checkout reset
+        await ResultModel.updateMany(
+          { isCheckout: { $ne: false } },
+          { $set: { isCheckout: false } }
+        );
       }
     } catch (error) {
       console.error("Error during weekly reset:", error);

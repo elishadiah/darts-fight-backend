@@ -78,8 +78,12 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   const user = await UserModel.findById(userId);
   if (!user) throw new Error("User not found");
 
+  const result = await ResultModel.findOne({ username: user.username });
+  if (!result) throw new Error("Result not found");
+
   const bonus = rankBonuses[user.rank] || 0;
-  user.xp += Number(xpToAdd) * (1 + bonus);
+  const checkoutBonus = result.isCheckout ? 0.1 : 0;
+  user.xp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
 
   console.log("user.xp-->>>", user.xp, '-->>>', xpToAdd, '-->>', bonus);
 

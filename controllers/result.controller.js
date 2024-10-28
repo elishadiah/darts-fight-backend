@@ -395,6 +395,7 @@ const postResult = async (req, res) => {
         level: data.level,
         date: data.date,
         summary: data.summary,
+        isCheckout: data.isCheckout,
         active: true,
       },
       { new: true, runValidators: true }
