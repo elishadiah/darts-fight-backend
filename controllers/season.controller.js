@@ -88,7 +88,13 @@ const adminSeason = async (req, res) => {
   try {
     const currentDate = new Date();
     const seasonEndDate = new Date();
-    seasonEndDate.setDate(currentDate.getDate() + 30);
+
+    if (currentDate.getDate() < 28) {
+      seasonEndDate.setDate(28);
+    } else {
+      seasonEndDate.setMonth(currentDate.getMonth() + 1);
+      seasonEndDate.setDate(28);
+    }
 
     const currentSeason = await SeasonModel.findOne().sort({ season: -1 });
 
