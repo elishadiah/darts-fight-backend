@@ -11,6 +11,7 @@ const {
   getFightsWeek,
   getWinsPerUser,
 } = require("../controllers/event.controller.js");
+const { adminSeason } = require("../controllers/season.controller.js");
 
 const addMinutes = (date, minutes) => {
   const dateCopy = new Date(date);
