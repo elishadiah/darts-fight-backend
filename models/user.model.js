@@ -129,6 +129,10 @@ const UserSchema = new Schema(
       type: Number,
       default: 0,
     },
+    dXp: {
+      type: Number,
+      default: 0,
+    },
     stamina: {
       type: Number,
       min: 0,

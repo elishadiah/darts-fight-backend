@@ -83,7 +83,7 @@ const selectRandomPlayer = (players) => {
   return players[Math.floor(Math.random() * players.length)];
 };
 
-const playSingleMatch = (player1, player2) => {
+const playSingleMatch = (player1, player2, firstTurn) => {
   let challenger = {
     username: player1.username,
     scoring: player1.vAvatar.scoring,
@@ -99,7 +99,7 @@ const playSingleMatch = (player1, player2) => {
     remainingPoints: 501,
   };
 
-  let turn = 0;
+  let turn = firstTurn;
   let winner;
   let player1Scores = [],
     player2Scores = [];
@@ -134,6 +134,17 @@ const playSingleMatch = (player1, player2) => {
   winner = applyEdge(challenger, opponent);
   console.log(`${winner.username} won the match!`);
   return { winner, player1Scores, player2Scores };
+};
+
+
+const checkBullseye = (player1, player2) => {
+  const randomBullseye = Math.random() * 100;
+  if (randomBullseye < player1?.vAvatar?.bullseye) {
+    return 0;
+  } else if (randomBullseye < player2?.vAvatar?.bullseye) {
+    return 1;
+  }
+  return 0;
 };
 
 const playMatchSeries = async (
@@ -172,14 +183,19 @@ const playMatchSeries = async (
   let player2Wins = 0;
   let matchNo = 0;
   let matchResults = [];
+  
+  let firstTurn = checkBullseye(user1, user2);
 
   while (player1Wins < 3 && player2Wins < 3) {
     matchNo++;
     const { winner, player1Scores, player2Scores } = playSingleMatch(
       player1,
       player2,
-      matchNo
+      firstTurn,
     );
+
+    firstTurn = firstTurn === 0 ? 1 : 0;
+
     matchResults.push({
       matchNo,
       winner: winner.username,

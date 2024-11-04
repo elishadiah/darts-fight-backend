@@ -84,12 +84,13 @@ const updateXPAndRank = async (userId, xpToAdd) => {
   const bonus = rankBonuses[user.rank] || 0;
   const checkoutBonus = result.isCheckout ? 0.1 : 0;
   user.xp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
+  user.dXp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
 
-  console.log("user.xp-->>>", user.xp, '-->>>', xpToAdd, '-->>', bonus);
+  console.log("user.xp-->>>", user.xp, "-->>>", xpToAdd, "-->>", bonus);
 
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
-    if (user.xp >= rankThresholds[i]) {
+    if (user.dXp >= rankThresholds[i]) {
       newRank = i + 1;
       break;
     }
@@ -97,7 +98,11 @@ const updateXPAndRank = async (userId, xpToAdd) => {
 
   if (newRank > user.rank) {
     user.rank = newRank;
-    user.vAvatar = {...vAvatars[user.rank - 1], isLocked: false, isSelected: true};
+    user.vAvatar = {
+      ...vAvatars[user.rank - 1],
+      isLocked: false,
+      isSelected: true,
+    };
   }
 
   await user.save();
@@ -436,18 +441,7 @@ const addField = async (req, res) => {
       [
         {
           $set: {
-            vAvatar: {
-              title: "",
-              ranks: 0,
-              xp: 0,
-              img: "",
-              scoring: 20,
-              checkout: 0.2,
-              edge: 0,
-              bullseye: 0.1,
-              isLocked: false,
-              isSelected: true,
-            },
+            dXp: "$xp",
           },
         },
       ],
