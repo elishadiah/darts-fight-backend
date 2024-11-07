@@ -340,7 +340,7 @@ const postResult = async (req, res) => {
       type
     );
 
-    if (type === "quick") {
+    if (type === "quick" || type === 'top-quick') {
       if (existResult[0].quickToken !== token) {
         return res.status(400).json("Invalid token!");
       }
@@ -392,7 +392,7 @@ const postResult = async (req, res) => {
         readyForIt: data.readyForIt,
         throwCount: data.throwCount,
         championChallenger: data.championChallenger,
-        level: data.level,
+        level: type === "quick" ? data.level : existResult[0].level,
         date: data.date,
         summary: data.summary,
         isCheckout: data.isCheckout,
@@ -413,30 +413,36 @@ const postResult = async (req, res) => {
       },
     });
 
-    if (data.level === 6) {
-      const season = await SeasonModel.findOne().sort({ season: -1 });
-      if (season) {
-        const topMembers = season.topMembers;
-        const index = topMembers.findIndex((val) => val.equals(newResult._id));
-        if (index === -1) {
-          topMembers.push(newResult._id);
-          await SeasonModel.findByIdAndUpdate(season._id, {
-            topMembers,
-          });
+    if (type === "quick") {
+      if (data.level === 6) {
+        const season = await SeasonModel.findOne().sort({ season: -1 });
+        if (season) {
+          const topMembers = season.topMembers;
+          const index = topMembers.findIndex((val) =>
+            val.equals(newResult._id)
+          );
+          if (index === -1) {
+            topMembers.push(newResult._id);
+            await SeasonModel.findByIdAndUpdate(season._id, {
+              topMembers,
+            });
+          }
         }
-      }
-    } else {
-      const season = await SeasonModel.findOne().sort({ season: -1 });
+      } else {
+        const season = await SeasonModel.findOne().sort({ season: -1 });
 
-      if (season) {
-        const topMembers = season.topMembers;
-        const index = topMembers.findIndex((val) => val.equals(newResult._id));
-        if (index !== -1) {
-          topMembers.splice(index, 1);
+        if (season) {
+          const topMembers = season.topMembers;
+          const index = topMembers.findIndex((val) =>
+            val.equals(newResult._id)
+          );
+          if (index !== -1) {
+            topMembers.splice(index, 1);
 
-          await SeasonModel.findByIdAndUpdate(season._id, {
-            topMembers,
-          });
+            await SeasonModel.findByIdAndUpdate(season._id, {
+              topMembers,
+            });
+          }
         }
       }
     }

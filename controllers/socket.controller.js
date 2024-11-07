@@ -95,7 +95,7 @@ const socketController = async (socket, socketIO, app) => {
   // forward the private message to the right recipient (and to other tabs of the sender)
   socket.on(
     "challenge",
-    async ({ message, toId, fromId, to, from, paymentOption }) => {
+    async ({ message, toId, fromId, to, from, paymentOption, type }) => {
       const notification = new NotificationModel({
         message,
         to: toId,
@@ -131,6 +131,7 @@ const socketController = async (socket, socketIO, app) => {
           from,
           fromId,
           paymentOption,
+          type,
         });
 
         const challenger = await UserModel.findOne({ username: from });
@@ -174,11 +175,11 @@ const socketController = async (socket, socketIO, app) => {
 
   socket.on(
     "quick-accept",
-    async ({ toId, opponent, challenger, paymentOption, token }) => {
+    async ({ toId, opponent, challenger, paymentOption, token, type }) => {
       console.log("quick-accept-->>", toId);
       socket
         .to(toId)
-        .emit("quick-accept-response", { paymentOption, token, opponent });
+        .emit("quick-accept-response", { paymentOption, token, opponent, type });
 
       const user = await UserModel.findOne({ username: opponent });
       updateXPAndRank(user._id, 20);
