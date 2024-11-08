@@ -232,7 +232,12 @@ const fetchAllResultsAndUsers = async (req, res) => {
       const combinedData = results.map((result, index) => {
         const user = users[index];
         return user
-          ? { ...result.toObject(), vAvatar: user.vAvatar, xp: user.xp }
+          ? {
+              ...result.toObject(),
+              vAvatar: user.vAvatar,
+              xp: user.xp,
+              dXp: user.dXp,
+            }
           : result.toObject();
       });
 
@@ -340,7 +345,7 @@ const postResult = async (req, res) => {
       type
     );
 
-    if (type === "quick" || type === 'top-quick') {
+    if (type === "quick" || type === "top-quick") {
       if (existResult[0].quickToken !== token) {
         return res.status(400).json("Invalid token!");
       }
