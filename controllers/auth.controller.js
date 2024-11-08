@@ -90,7 +90,7 @@ const updateXPAndRank = async (userId, xpToAdd) => {
 
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
-    if (user.dXp >= rankThresholds[i]) {
+    if (user.xp >= rankThresholds[i]) {
       newRank = i + 1;
       break;
     }
