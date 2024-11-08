@@ -280,6 +280,7 @@ const playMatchSeries = async (
   if (overallWinner.username === player1.username) {
     user1.isArena = true;
     user1.xp += 1 + user1.vAvatar.ranks;
+    user1.dXp += 1 + user1.vAvatar.ranks;
     user2.isArena = false;
     await user1.save();
     await user2.save();
@@ -287,6 +288,7 @@ const playMatchSeries = async (
     user1.isArena = false;
     user2.isArena = true;
     user2.xp += 1 + user2.vAvatar.ranks;
+    user2.dXp += 1 + user2.vAvatar.ranks;
     await user1.save();
     await user2.save();
   }
