@@ -136,7 +136,6 @@ const playSingleMatch = (player1, player2, firstTurn) => {
   return { winner, player1Scores, player2Scores };
 };
 
-
 const checkBullseye = (player1, player2) => {
   const randomBullseye = Math.random() * 100;
   if (randomBullseye < player1?.vAvatar?.bullseye) {
@@ -155,153 +154,160 @@ const playMatchSeries = async (
   socket,
   res
 ) => {
-  const user1 = await UserModel.findById(player1._id);
-  const user2 = await UserModel.findById(player2._id);
+  try {
+    const user1 = await UserModel.findById(player1._id);
+    const user2 = await UserModel.findById(player2._id);
 
-  console.log(
-    "Starting match series between",
-    user1.username,
-    "and",
-    user2.username,
-    "-->>",
-    user2.stamina
-  );
-
-  user1.stamina -= 10;
-  await user1.save();
-  user2.stamina -= 10;
-  await user2.save();
-
-  console.log(
-    "Match series started between",
-    player1.username,
-    "and",
-    player2.username
-  );
-
-  let player1Wins = 0;
-  let player2Wins = 0;
-  let matchNo = 0;
-  let matchResults = [];
-  
-  let firstTurn = checkBullseye(user1, user2);
-
-  while (player1Wins < 3 && player2Wins < 3) {
-    matchNo++;
-    const { winner, player1Scores, player2Scores } = playSingleMatch(
-      player1,
-      player2,
-      firstTurn,
+    console.log(
+      "Starting match series between",
+      user1.username,
+      "and",
+      user2.username,
+      "-->>",
+      user2.stamina
     );
 
-    firstTurn = firstTurn === 0 ? 1 : 0;
+    user1.stamina -= 10;
+    await user1.save();
+    user2.stamina -= 10;
+    await user2.save();
 
-    matchResults.push({
-      matchNo,
-      winner: winner.username,
-      player1Scores,
-      player2Scores,
-    });
+    console.log(
+      "Match series started between",
+      player1.username,
+      "and",
+      player2.username
+    );
 
-    if (winner.username === player1.username) {
-      player1Wins++;
-    } else {
-      player2Wins++;
+    let player1Wins = 0;
+    let player2Wins = 0;
+    let matchNo = 0;
+    let matchResults = [];
+
+    let firstTurn = checkBullseye(user1, user2);
+
+    while (player1Wins < 3 && player2Wins < 3) {
+      matchNo++;
+      const { winner, player1Scores, player2Scores } = playSingleMatch(
+        player1,
+        player2,
+        firstTurn
+      );
+
+      firstTurn = firstTurn === 0 ? 1 : 0;
+
+      matchResults.push({
+        matchNo,
+        winner: winner.username,
+        player1Scores,
+        player2Scores,
+      });
+
+      if (winner.username === player1.username) {
+        player1Wins++;
+      } else {
+        player2Wins++;
+      }
+      console.log(`${winner.username} won a match!`);
     }
-    console.log(`${winner.username} won a match!`);
-  }
 
-  const overallWinner = player1Wins === 3 ? player1 : player2;
-  console.log(`${overallWinner.username} won the series!`);
+    const overallWinner = player1Wins === 3 ? player1 : player2;
+    console.log(`${overallWinner.username} won the series!`);
 
-  let message;
+    let message;
 
-  if (overallWinner.username === player1.username) {
-    message = `${
-      player1.username
-    } won ${player1Wins} : ${player2Wins} in the Fight against ${
-      player2.username
-    } in the Sparring Arena. ${player1.username} gets ${
-      1 + user1.vAvatar.ranks
-    } XP.`;
-  } else {
-    message = `${
-      player2.username
-    } won ${player2Wins} : ${player1Wins} in the Fight against ${
-      player1.username
-    } in the Sparring Arena. ${player2.username} gets ${
-      1 + user2.vAvatar.ranks
-    } XP.`;
-  }
+    if (overallWinner.username === player1.username) {
+      message = `${
+        player1.username
+      } won ${player1Wins} : ${player2Wins} in the Fight against ${
+        player2.username
+      } in the Sparring Arena. ${player1.username} gets ${
+        1 + user1.vAvatar.ranks
+      } XP.`;
+    } else {
+      message = `${
+        player2.username
+      } won ${player2Wins} : ${player1Wins} in the Fight against ${
+        player1.username
+      } in the Sparring Arena. ${player2.username} gets ${
+        1 + user2.vAvatar.ranks
+      } XP.`;
+    }
 
-  const notification1 = new NotificationModel({
-    message,
-    to: player1._id.toString(),
-    read: false,
-  });
-  const notification2 = new NotificationModel({
-    message,
-    to: player2._id.toString(),
-    read: false,
-  });
-
-  const noti = await notification1.save();
-  await notification2.save();
-
-  socket
-    .to(player1._id.toString())
-    .to(player2._id.toString())
-    .emit("arena-match-results", {
-      player1: player1.username,
-      player2: player2.username,
-      results: matchResults,
-      winner: overallWinner.username,
-      date: new Date(),
-      notification: noti,
-    });
-
-  const arena = await ArenaModel.findOne({ title: arenaTitle });
-  arena.matchResults.push({
-    player1: player1.username,
-    player2: player2.username,
-    results: matchResults,
-    winner: overallWinner.username,
-    date: new Date(),
-  });
-  arena.idleUsers.push(player1._id.toString());
-  arena.idleUsers.push(player2._id.toString());
-  await arena.save();
-
-  if (option === "Auto") {
-    startMatch(user1, arenaTitle, option, socket, res);
-    // startMatch(user2, arenaTitle, option, socket, res);
-  }
-
-  if (overallWinner.username === player1.username) {
-    user1.isArena = true;
-    user1.xp += 1 + user1.vAvatar.ranks;
-    user1.dXp += 1 + user1.vAvatar.ranks;
-    user2.isArena = false;
-    await user1.save();
-    await user2.save();
-  } else {
-    user1.isArena = false;
-    user2.isArena = true;
-    user2.xp += 1 + user2.vAvatar.ranks;
-    user2.dXp += 1 + user2.vAvatar.ranks;
-    await user1.save();
-    await user2.save();
-  }
-
-  if (option === "Manual") {
-    return res.status(200).json({
-      player1: player1.username,
-      player2: player2.username,
-      results: matchResults,
-      winner: overallWinner.username,
-      date: new Date(),
+    const notification1 = new NotificationModel({
       message,
+      to: player1._id.toString(),
+      read: false,
     });
+    const notification2 = new NotificationModel({
+      message,
+      to: player2._id.toString(),
+      read: false,
+    });
+
+    const noti = await notification1.save();
+    await notification2.save();
+
+    socket
+      .to(player1._id.toString())
+      .to(player2._id.toString())
+      .emit("arena-match-results", {
+        player1: player1.username,
+        player2: player2.username,
+        results: matchResults,
+        winner: overallWinner.username,
+        date: new Date(),
+        notification: noti,
+      });
+
+    const arena = await ArenaModel.findOne({ title: arenaTitle });
+    arena.matchResults.push({
+      player1: player1.username,
+      player2: player2.username,
+      results: matchResults,
+      winner: overallWinner.username,
+      date: new Date(),
+    });
+    arena.idleUsers.push(player1._id.toString());
+    arena.idleUsers.push(player2._id.toString());
+    await arena.save();
+
+    if (option === "Auto") {
+      startMatch(user1, arenaTitle, option, socket, res);
+      // startMatch(user2, arenaTitle, option, socket, res);
+    }
+
+    if (overallWinner.username === player1.username) {
+      user1.isArena = true;
+      user1.xp += 1 + user1.vAvatar.ranks;
+      user1.dXp += 1 + user1.vAvatar.ranks;
+      user2.isArena = false;
+      await user1.save();
+      await user2.save();
+    } else {
+      user1.isArena = false;
+      user2.isArena = true;
+      user2.xp += 1 + user2.vAvatar.ranks;
+      user2.dXp += 1 + user2.vAvatar.ranks;
+      await user1.save();
+      await user2.save();
+    }
+
+    if (option === "Manual") {
+      return res.status(200).json({
+        player1: player1.username,
+        player2: player2.username,
+        results: matchResults,
+        winner: overallWinner.username,
+        date: new Date(),
+        message,
+      });
+    }
+  } catch (error) {
+    console.error("Error in playMatchSeries:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
 };
 
@@ -366,6 +372,9 @@ const startMatch = async (user, arenaTitle, option, socket, res) => {
     }
   } catch (err) {
     console.error("Error starting match:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Internal server error" });
+    }
   }
 };
 
