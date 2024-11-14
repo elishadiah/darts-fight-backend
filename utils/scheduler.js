@@ -230,17 +230,7 @@ const scheduleTasks = (socketIO) => {
     }
   });
 
-  let isCronRunning = false;
-
   cron.schedule("* * * * *", async () => {
-    if (isCronRunning) {
-      console.log("Cron job is already running");
-      return;
-    }
-
-    isCronRunning = true;
-    console.log("Cron job started");
-
     try {
       // socket test
       // console.log("Cron-schedule--socket test-->>>", socketIO);
@@ -333,9 +323,6 @@ const scheduleTasks = (socketIO) => {
       });
     } catch (err) {
       console.log("Cron-schedule-err-->>", err);
-    } finally {
-      isCronRunning = false;
-      console.log("Cron-schedule--finally-->>", isCronRunning);
     }
   });
 };

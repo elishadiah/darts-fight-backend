@@ -13,7 +13,7 @@ const addMinutes = (date, minutes) => {
 };
 
 const socketController = async (socket, socketIO, app) => {
-  console.log(`⚡: ${socket.username} user just connected!`);
+  // console.log(`⚡: ${socket.username} user just connected!`);
 
   await UserModel.updateOne({ _id: socket.userID }, { status: "online" });
 
