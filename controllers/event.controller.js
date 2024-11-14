@@ -218,7 +218,7 @@ const getFightsWeek = async () => {
 
 const fightsPerDay = async (startDate, endDate) => {
   try {
-    console.log("startDate", startDate);
+    // console.log("startDate", startDate);
     const fightsPerDayThisMonth = await EventModel.aggregate([
       {
         $match: {
@@ -254,7 +254,7 @@ const fightsPerDay = async (startDate, endDate) => {
 
 const fightsPerUser = async (startDate, endDate) => {
   try {
-    console.log("startDate", startDate);
+    // console.log("startDate", startDate);
     const fightsPerUser = await EventModel.aggregate([
       {
         $match: {
@@ -279,7 +279,7 @@ const fightsPerUser = async (startDate, endDate) => {
 
 const getWinsPerUser = async (startDate, endDate) => {
   try {
-    console.log("startDate", startDate);
+    // console.log("startDate", startDate);
     const winsPerUser = await EventModel.aggregate([
       {
         $match: {
