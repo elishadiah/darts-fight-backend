@@ -4,7 +4,6 @@ const UserModel = require("../models/user.model.js");
 const NotificationModel = require("../models/notification.model.js");
 const ResultModel = require("../models/result.model.js");
 const SeasonModel = require("../models/season.model.js");
-const CommunityModel = require("../models/community.model.js");
 const { sendEmailNotification } = require("../email.js");
 const {
   getFightsDay,
@@ -13,22 +12,50 @@ const {
 } = require("../controllers/event.controller.js");
 const { adminSeason } = require("../controllers/season.controller.js");
 
+const CRON_SCHEDULES = {
+  WEEKLY: "0 0 * * 1",
+  DAILY: "0 0 * * *",
+  HOURLY: "0 * * * *",
+  MINUTELY: "* * * * *",
+};
+
+const TIME_INTERVALS = {
+  FOUR_HOURS: -240,
+  ONE_MINUTE: -1,
+  TEN_MINUTES: 10,
+};
+
 const addMinutes = (date, minutes) => {
-  const dateCopy = new Date(date);
-  dateCopy.setMinutes(dateCopy.getMinutes() + minutes);
-  return dateCopy;
+  try {
+    const dateCopy = new Date(date);
+    dateCopy.setMinutes(dateCopy.getMinutes() + minutes);
+    return dateCopy;
+  } catch (err) {
+    console.error("Error in addMinutes:", err);
+  }
 };
 
 const removeSchedule = async (id) => {
   try {
     await ScheduleModel.findByIdAndDelete(id);
   } catch (err) {
-    console.log("----->>", err);
+    console.error("Error in removeSchedule:", err);
   }
 };
 
+const updateUsersXp = async (regexArray, xp) => {
+  await UserModel.updateMany(
+    { username: { $in: regexArray } },
+    { $inc: { xp } }
+  );
+};
+
+const emitEvent = (socketIO, event, data) => {
+  socketIO.emit(event, data);
+};
+
 const scheduleTasks = (socketIO) => {
-  cron.schedule("0 0 * * 1", async () => {
+  cron.schedule(CRON_SCHEDULES.WEEKLY, async () => {
     try {
       // "Project Mayhem Week"
       const {
@@ -41,16 +68,13 @@ const scheduleTasks = (socketIO) => {
         const regexArray = participantsWeek.map(
           (userName) => new RegExp(`^${userName}$`, "i")
         );
-        await UserModel.updateMany(
-          { username: { $in: regexArray } },
-          { $inc: { xp: 500 } }
-        );
+        await updateUsersXp(regexArray, 500);
 
         const maxFightUser = fightsPerUser.reduce((max, user) => {
           return user.count > max.count ? user : max;
         }, fightsPerUser[0]);
 
-        socketIO.emit("project-mayhem-week", {
+        emitEvent(socketIO, "project-mayhem-week", {
           participantsWeek,
           maxFightUser,
         });
@@ -73,40 +97,13 @@ const scheduleTasks = (socketIO) => {
     }
   });
 
-  // cron.schedule("0 0 */2 * *", async () => {
-  //   try {
-  //     // "Every 48hrs" Challenge
-  //     const now = new Date();
-  //     const startOf48Hours = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-  //     const endOf48Hours = now;
-  //     const winsPerUserLast48Hours = await getWinsPerUser(
-  //       startOf48Hours,
-  //       endOf48Hours
-  //     );
-
-  //     if (winsPerUserLast48Hours.length > 0) {
-  //       for (const user of winsPerUserLast48Hours) {
-  //         if (user?.userWins >= 10) {
-  //           await UserModel.updateOne(
-  //             { username: user._id },
-  //             { $inc: { xp: 50 } }
-  //           ).exec();
-  //         }
-  //       }
-  //     }
-
-  //     console.log("Every 48hrs task started", winsPerUserLast48Hours);
-  //   } catch (error) {
-  //     console.error("Error every 48hrs:", error);
-  //   }
-  // });
-
-  cron.schedule("0 0 * * *", async function () {
+  cron.schedule(CRON_SCHEDULES.DAILY, async () => {
     const currentDate = new Date();
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
     const oneMonthAgo = new Date();
     oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+
     try {
       // Update all users to isFirstLogin: true
       await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
@@ -118,16 +115,13 @@ const scheduleTasks = (socketIO) => {
         const regexArray = participants.map(
           (userName) => new RegExp(`^${userName}$`, "i")
         );
-        await UserModel.updateMany(
-          { username: { $in: regexArray } },
-          { $inc: { xp: 100 } }
-        );
+        await updateUsersXp(regexArray, 100);
 
         const maxFightUser = fightsPerUser.reduce((max, user) => {
           return user.count > max.count ? user : max;
         }, fightsPerUser[0]);
 
-        socketIO.emit("underground-champion", {
+        emitEvent(socketIO, "underground-champion", {
           participants,
           maxFightUser,
         });
@@ -194,11 +188,6 @@ const scheduleTasks = (socketIO) => {
             { $set: { level: nextLevel } }
           );
         }
-
-        // Perform the update
-        if (Object.keys(updateData).length > 0) {
-          await ResultModel.updateOne({ _id: doc._id }, updateData);
-        }
       }
 
       console.log("Documents updated successfully");
@@ -207,7 +196,7 @@ const scheduleTasks = (socketIO) => {
     }
   });
 
-  cron.schedule("0 * * * *", async function () {
+  cron.schedule("CRON_SCHEDULES.HOURLY", async function () {
     try {
       await UserModel.updateMany(
         { stamina: { $lt: 100 } },
@@ -220,22 +209,14 @@ const scheduleTasks = (socketIO) => {
         { $set: { stamina: 100 } }
       );
 
-      // const users = await UserModel.find();
-
-      // socket.broadcast.emit("stamina-recovery", users);
-
       console.log("Stamina recovery executed successfully");
     } catch (err) {
       console.error("Failed to recover stamina:", err);
     }
   });
 
-  cron.schedule("* * * * *", async () => {
+  cron.schedule(CRON_SCHEDULES.MINUTELY, async () => {
     try {
-      // socket test
-      // console.log("Cron-schedule--socket test-->>>", socketIO);
-      // socketIO.emit("test", "test")
-
       // Send notifications for upcoming challenges
       const schedules = await ScheduleModel.find();
       schedules.forEach(async (item) => {
@@ -245,8 +226,8 @@ const scheduleTasks = (socketIO) => {
         });
 
         if (
-          new Date() > addMinutes(item.date, -240) &&
-          new Date() < addMinutes(item.date, -239)
+          new Date() > addMinutes(item.date, TIME_INTERVALS.FOUR_HOURS) &&
+          new Date() < addMinutes(item.date, TIME_INTERVALS.FOUR_HOURS + 1)
         ) {
           sendEmailNotification(
             item.receiver,
@@ -280,10 +261,9 @@ const scheduleTasks = (socketIO) => {
               });
           }
         } else if (
-          new Date() > addMinutes(item.date, -1) &&
+          new Date() > addMinutes(item.date, TIME_INTERVALS.ONE_MINUTE) &&
           new Date() < new Date(item.date)
         ) {
-          console.log("Cron-schedule--notification-->>", item);
           sendEmailNotification(
             item.receiver,
             item.receiverEmail,
@@ -315,11 +295,12 @@ const scheduleTasks = (socketIO) => {
                 notification: rres,
               });
           }
-        } else if (new Date() >= addMinutes(item.date, 10)) {
+        } else if (
+          new Date() >= addMinutes(item.date, TIME_INTERVALS.TEN_MINUTES)
+        ) {
           console.log("Cron-schedule--remove-->>", item);
           removeSchedule(item._id);
         }
-        console.log("Cron-schedule-->>", item);
       });
     } catch (err) {
       console.log("Cron-schedule-err-->>", err);
