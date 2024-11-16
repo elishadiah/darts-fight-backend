@@ -196,7 +196,7 @@ const scheduleTasks = (socketIO) => {
     }
   });
 
-  cron.schedule("CRON_SCHEDULES.HOURLY", async function () {
+  cron.schedule(CRON_SCHEDULES.HOURLY, async function () {
     try {
       await UserModel.updateMany(
         { stamina: { $lt: 100 } },
