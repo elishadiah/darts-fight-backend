@@ -64,7 +64,7 @@ const calculateScore = (scoring) => {
 };
 
 const checkCheckoutSuccess = (player) => {
-  return Math.random() < player.checkout / 100;
+  return Math.random() < player.checkout;
 };
 
 const applyEdge = (player1, player2) => {
@@ -118,7 +118,7 @@ const playSingleMatch = (player1, player2, firstTurn) => {
       }
     }
 
-    if (currentPlayer.remainingPoints < 100) {
+    if (currentPlayer.remainingPoints < currentPlayer?.scoring) {
       const checkoutSuccess = checkCheckoutSuccess(currentPlayer);
 
       if (checkoutSuccess) {
