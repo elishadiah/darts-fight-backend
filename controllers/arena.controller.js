@@ -64,14 +64,14 @@ const calculateScore = (scoring) => {
 };
 
 const checkCheckoutSuccess = (player) => {
-  return Math.random() < player.checkout;
+  return Math.random() * 10 < player.checkout;
 };
 
 const applyEdge = (player1, player2) => {
   const scoreDifference = Math.abs(
     player1.remainingPoints - player2.remainingPoints
   );
-  let randomEdge = Math.random() * 100;
+  let randomEdge = Math.random() * 10;
 
   if (scoreDifference >= randomEdge) {
     return player1.edge > player2.edge ? player1 : player2;
