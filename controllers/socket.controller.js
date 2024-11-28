@@ -51,7 +51,9 @@ const socketController = async (socket, socketIO, app) => {
           updatedUsersList,
         });
 
-        socket.to(rUser._id.toString()).emit("top-challenge-response", { notification });
+        socket
+          .to(rUser._id.toString())
+          .emit("top-challenge-response", { notification });
       }
     } catch (err) {
       console.log("top-challenge--err-->>", err);
@@ -177,9 +179,12 @@ const socketController = async (socket, socketIO, app) => {
     "quick-accept",
     async ({ toId, opponent, challenger, paymentOption, token, type }) => {
       console.log("quick-accept-->>", toId);
-      socket
-        .to(toId)
-        .emit("quick-accept-response", { paymentOption, token, opponent, type });
+      socket.to(toId).emit("quick-accept-response", {
+        paymentOption,
+        token,
+        opponent,
+        type,
+      });
 
       const user = await UserModel.findOne({ username: opponent });
       updateXPAndRank(user._id, 20);
@@ -227,6 +232,17 @@ const socketController = async (socket, socketIO, app) => {
       });
     } catch (err) {
       console.log("update-user-status--err>>", err);
+    }
+  });
+
+  socket.on("score-update", async ({ score, user, userId, opponent, opponentId }) => {
+    try {
+      console.log('score--update-->>', score, user)
+      socket
+        .to(opponentId)
+        .emit("score-update-response", { score, opponent: user });
+    } catch (err) {
+      console.log("score-update--err>>", err);
     }
   });
 
