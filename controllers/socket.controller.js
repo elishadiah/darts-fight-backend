@@ -235,16 +235,23 @@ const socketController = async (socket, socketIO, app) => {
     }
   });
 
-  socket.on("score-update", async ({ score, user, userId, opponent, opponentId }) => {
-    try {
-      console.log('score--update-->>', score, user)
-      socket
-        .to(opponentId)
-        .emit("score-update-response", { score, opponent: user });
-    } catch (err) {
-      console.log("score-update--err>>", err);
+  socket.on(
+    "score-update",
+    async ({ score, remainingScore, user, userId, opponent, opponentId }) => {
+      try {
+        console.log("score--update-->>", score, user);
+        socket
+          .to(opponentId)
+          .emit("score-update-response", {
+            score,
+            remainingScore,
+            opponent: user,
+          });
+      } catch (err) {
+        console.log("score-update--err>>", err);
+      }
     }
-  });
+  );
 
   socket.on(
     "schedule-challenge",
