@@ -2,7 +2,12 @@ const UserModel = require("../models/user.model.js");
 const NotificationModel = require("../models/notification.model.js");
 const ResultModel = require("../models/result.model.js");
 const ScheduleModel = require("../models/schedule.model.js");
+const ScoreModel = require("../models/score.model.js");
 const { updateXPAndRank } = require("../controllers/auth.controller.js");
+const {
+  createMatch,
+  updateMatchScore,
+} = require("../controllers/score.controller.js");
 const crypto = require("crypto");
 const cron = require("node-cron");
 
@@ -178,16 +183,22 @@ const socketController = async (socket, socketIO, app) => {
   socket.on(
     "quick-accept",
     async ({ toId, opponent, challenger, paymentOption, token, type }) => {
-      console.log("quick-accept-->>", toId);
-      socket.to(toId).emit("quick-accept-response", {
-        paymentOption,
-        token,
-        opponent,
-        type,
-      });
+      try {
+        console.log("quick-accept-->>", toId);
+        socket.to(toId).emit("quick-accept-response", {
+          paymentOption,
+          token,
+          opponent,
+          type,
+        });
 
-      const user = await UserModel.findOne({ username: opponent });
-      updateXPAndRank(user._id, 20);
+        await createMatch(challenger, opponent, token);
+
+        const user = await UserModel.findOne({ username: opponent });
+        updateXPAndRank(user._id, 20);
+      } catch (err) {
+        console.log("quick--accept--error-->>", err);
+      }
     }
   );
 
@@ -237,16 +248,13 @@ const socketController = async (socket, socketIO, app) => {
 
   socket.on(
     "score-update",
-    async ({ score, remainingScore, user, userId, opponent, opponentId }) => {
+    async ({ score, user, userId, opponent, opponentId, token }) => {
       try {
-        console.log("score--update-->>", score, user);
-        socket
-          .to(opponentId)
-          .emit("score-update-response", {
-            score,
-            remainingScore,
-            opponent: user,
-          });
+        const updatedMatch = await updateMatchScore(token, score, user);
+
+        socket.to(opponentId).emit("score-update-response", {
+          updatedMatch,
+        });
       } catch (err) {
         console.log("score-update--err>>", err);
       }
