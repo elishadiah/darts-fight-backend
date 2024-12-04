@@ -36,22 +36,42 @@ const updateMatchScore = async (token, score, user) => {
     }
 
     if (user === match.challenger) {
-      match.challengerScore = match.challengerScore - score;
-      if (!match.challengerScoreHistory[match.legNo - 1]) {
-        match.challengerScoreHistory[match.legNo - 1] = [];
+      let currentScore = match.challengerScore;
+
+      if (currentScore - score > 0) {
+        match.challengerScore = currentScore - score;
+        if (!match.challengerScoreHistory[match.legNo - 1]) {
+          match.challengerScoreHistory[match.legNo - 1] = [];
+        }
+        let history = match.challengerScoreHistory[match.legNo - 1];
+        history.push(score);
+        match.challengerScoreHistory[match.legNo - 1] = history;
+      } else if (currentScore - score === 0) {
+        match.challengerScore = 501;
+        match.challengerWins = match.challengerWins + 1;
+        match.legNo = match.legNo + 1;
+        match.opponentScore = 501;
       }
-      let history = match.challengerScoreHistory[match.legNo - 1];
-      history.push(score);
-      match.challengerScoreHistory[match.legNo - 1] = history;
+
       match.challengerTurn = false;
     } else {
-      match.opponentScore = match.opponentScore - score;
-      if (!match.opponentScoreHistory[match.legNo - 1]) {
-        match.opponentScoreHistory[match.legNo - 1] = [];
+      let currentScore = match.opponentScore;
+
+      if (currentScore - score > 0) {
+        match.opponentScore = currentScore - score;
+        if (!match.opponentScoreHistory[match.legNo - 1]) {
+          match.opponentScoreHistory[match.legNo - 1] = [];
+        }
+        let history = match.opponentScoreHistory[match.legNo - 1];
+        history.push(score);
+        match.opponentScoreHistory[match.legNo - 1] = history;
+      } else if (currentScore - score === 0) {
+        match.opponentWins = match.opponentWins + 1;
+        match.legNo = match.legNo + 1;
+        match.challengerScore = 501;
+        match.opponentScore = 501;
       }
-      let history = match.opponentScoreHistory[match.legNo - 1];
-      history.push(score);
-      match.opponentScoreHistory[match.legNo - 1] = history;
+
       match.challengerTurn = true;
     }
 
