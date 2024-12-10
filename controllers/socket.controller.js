@@ -252,9 +252,16 @@ const socketController = async (socket, socketIO, app) => {
       try {
         const updatedMatch = await updateMatchScore(token, score, user);
 
-        socket.to(opponentId).emit("score-update-response", {
-          updatedMatch,
-        });
+        if (
+          updatedMatch.legNo > 5 ||
+          Math.abs(updatedMatch.challengerWins - updatedMatch.opponentWins) >= 2
+        ) {
+          socket.to(opponentId).emit("finish-match");
+        } else {
+          socket.to(opponentId).emit("score-update-response", {
+            updatedMatch,
+          });
+        }
       } catch (err) {
         console.log("score-update--err>>", err);
       }

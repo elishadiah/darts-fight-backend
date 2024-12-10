@@ -96,4 +96,44 @@ const getMatchStatus = async (req, res) => {
   }
 };
 
-module.exports = { getScores, createMatch, getMatchStatus, updateMatchScore };
+const updateDouble = async (req, res) => {
+  try {
+    const { token, user, doubles } = req.body;
+
+    const match = await ScoreModel.findOne({ token });
+
+    if (!match) {
+      return res.status(404).json({ message: "Match not found" });
+    }
+
+    if (user === match.challenger) {
+      match.challengerDoubles.missed += Number(doubles.missed);
+      match.challengerDoubles.throw += Number(doubles.throw);
+    } else if (user === match.opponent) {
+      match.opponentDoubles.missed += Number(doubles.missed);
+      match.opponentDoubles.throw += Number(doubles.throw);
+    } else {
+      return res.status(400).json({ message: "Invalid user" });
+    }
+
+    console.log('match before save:', match);
+
+    const updateMatch = await match.save();
+
+    console.log('match after save:', updateMatch);
+
+    res.json(updateMatch);
+  } catch (err) {
+    console.log("update-match-err->", err);
+    res.status(500).json({ message: err.message });
+    throw err;
+  }
+};
+
+module.exports = {
+  getScores,
+  createMatch,
+  getMatchStatus,
+  updateMatchScore,
+  updateDouble,
+};
