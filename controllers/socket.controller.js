@@ -254,7 +254,7 @@ const socketController = async (socket, socketIO, app) => {
 
         if (
           updatedMatch.legNo > 5 ||
-          Math.abs(updatedMatch.challengerWins - updatedMatch.opponentWins) >= 2
+          Math.abs(updatedMatch.challengerWins - updatedMatch.opponentWins) > 2
         ) {
           socket.to(opponentId).emit("finish-match");
         } else {
