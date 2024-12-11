@@ -12,13 +12,47 @@ const getScores = async (req, res) => {
 const createMatch = async (challenger, opponent, token) => {
   try {
     const newMatch = new ScoreModel({
-      challenger,
-      challengerScore: 501,
-      challengerScoreHistory: [],
-      opponent,
-      opponentScore: 501,
-      opponentScoreHistory: [],
       token,
+      p1: {
+        name: challenger,
+        currentScore: 501,
+        scoreHistory: [],
+        p0: 0,
+        p20: 0,
+        p26: 0,
+        p40: 0,
+        p60: 0,
+        p80: 0,
+        p100: 0,
+        p140: 0,
+        p160: 0,
+        p180: 0,
+        darts_thrown_double: 0,
+        darts_missed_double: 0,
+        legs: 0,
+        legs_won: 0,
+        match_avg: 0,
+      },
+      p2: {
+        name: opponent,
+        currentScore: 501,
+        scoreHistory: [],
+        p0: 0,
+        p20: 0,
+        p26: 0,
+        p40: 0,
+        p60: 0,
+        p80: 0,
+        p100: 0,
+        p140: 0,
+        p160: 0,
+        p180: 0,
+        darts_thrown_double: 0,
+        darts_missed_double: 0,
+        legs: 0,
+        legs_won: 0,
+        match_avg: 0,
+      },
     });
 
     await newMatch.save();
@@ -35,45 +69,61 @@ const updateMatchScore = async (token, score, user) => {
       throw new Error("Match not found");
     }
 
-    if (user === match.challenger) {
-      let currentScore = match.challengerScore;
-
-      if (currentScore - score > 0) {
-        match.challengerScore = currentScore - score;
-        if (!match.challengerScoreHistory[match.legNo - 1]) {
-          match.challengerScoreHistory[match.legNo - 1] = [];
-        }
-        let history = match.challengerScoreHistory[match.legNo - 1];
-        history.push(score);
-        match.challengerScoreHistory[match.legNo - 1] = history;
-      } else if (currentScore - score === 0) {
-        match.challengerScore = 501;
-        match.challengerWins = match.challengerWins + 1;
-        match.legNo = match.legNo + 1;
-        match.opponentScore = 501;
-      }
-
-      match.challengerTurn = false;
+    let player, opponent;
+    if (user === match.p1.name) {
+      player = match.p1;
+      opponent = match.p2;
+    } else if (user === match.p2.name) {
+      player = match.p2;
+      opponent = match.p1;
     } else {
-      let currentScore = match.opponentScore;
-
-      if (currentScore - score > 0) {
-        match.opponentScore = currentScore - score;
-        if (!match.opponentScoreHistory[match.legNo - 1]) {
-          match.opponentScoreHistory[match.legNo - 1] = [];
-        }
-        let history = match.opponentScoreHistory[match.legNo - 1];
-        history.push(score);
-        match.opponentScoreHistory[match.legNo - 1] = history;
-      } else if (currentScore - score === 0) {
-        match.opponentWins = match.opponentWins + 1;
-        match.legNo = match.legNo + 1;
-        match.challengerScore = 501;
-        match.opponentScore = 501;
-      }
-
-      match.challengerTurn = true;
+      throw new Error("Invalid user");
     }
+
+    let currentScore = player.currentScore;
+    player.currentScore = currentScore - score;
+
+    if (!player.scoreHistory[match.legNo - 1]) {
+      player.scoreHistory[match.legNo - 1] = { scores: [] };
+    }
+    let history = player.scoreHistory[match.legNo - 1].scores;
+    history.push(score);
+    player.scoreHistory[match.legNo - 1].scores = history;
+
+    if (score === 180) {
+      player.p180 = player.p180 + 1;
+    } else if (score >= 160) {
+      player.p160 = player.p160 + 1;
+    } else if (score >= 140) {
+      player.p140 = player.p140 + 1;
+    } else if (score >= 100) {
+      player.p100 = player.p100 + 1;
+    } else if (score >= 80) {
+      player.p80 = player.p80 + 1;
+    } else if (score >= 60) {
+      player.p60 = player.p60 + 1;
+    } else if (score >= 40) {
+      player.p40 = player.p40 + 1;
+    } else if (score === 26) {
+      player.p26 = player.p26 + 1;
+    } else if (score >= 20) {
+      player.p20 = player.p20 + 1;
+    } else if (score >= 0) {
+      player.p0 = player.p0 + 1;
+    }
+
+    if (currentScore - score === 0) {
+      player.currentScore = 501;
+      player.legs_won = (player.legs_won || 0) + 1;
+      opponent.currentScore = 501;
+      player.scoreHistory[match.legNo - 1] = {
+        ...player.scoreHistory[match.legNo - 1],
+        to_finish: score,
+      };
+      match.legNo = match.legNo + 1;
+    }
+
+    match.challengerTurn = user !== match.p1.name;
 
     const updateMatch = await match.save();
 
@@ -106,21 +156,19 @@ const updateDouble = async (req, res) => {
       return res.status(404).json({ message: "Match not found" });
     }
 
-    if (user === match.challenger) {
-      match.challengerDoubles.missed += Number(doubles.missed);
-      match.challengerDoubles.throw += Number(doubles.throw);
-    } else if (user === match.opponent) {
-      match.opponentDoubles.missed += Number(doubles.missed);
-      match.opponentDoubles.throw += Number(doubles.throw);
+    let player;
+    if (user === match.p1.name) {
+      player = match.p1;
+    } else if (user === match.p2.name) {
+      player = match.p2;
     } else {
       return res.status(400).json({ message: "Invalid user" });
     }
 
-    console.log('match before save:', match);
+    player.darts_missed_double += Number(doubles.missed);
+    player.darts_thrown_double += Number(doubles.throw);
 
     const updateMatch = await match.save();
-
-    console.log('match after save:', updateMatch);
 
     res.json(updateMatch);
   } catch (err) {
