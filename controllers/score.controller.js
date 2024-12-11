@@ -146,6 +146,22 @@ const getMatchStatus = async (req, res) => {
   }
 };
 
+const updateMatchFinish = async (token) => {
+  try {
+    const match = await ScoreModel.findOne({ token });
+
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    match.isFinished = true;
+
+    await match.save();
+  } catch (err) {
+    console.log("match-finish-err-->>>", err);
+  }
+};
+
 const updateDouble = async (req, res) => {
   try {
     const { token, user, doubles } = req.body;
@@ -184,4 +200,5 @@ module.exports = {
   getMatchStatus,
   updateMatchScore,
   updateDouble,
+  updateMatchFinish,
 };

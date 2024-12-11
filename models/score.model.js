@@ -33,6 +33,7 @@ const ScoreSchema = new Schema(
     legNo: { type: Number, default: 1 },
     token: { type: String, required: true },
     challengerTurn: { type: Boolean, default: true },
+    isFinished: { type: Boolean, default: false },
     p1: playerSchema,
     p2: playerSchema,
   },

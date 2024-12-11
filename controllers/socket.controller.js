@@ -7,6 +7,7 @@ const { updateXPAndRank } = require("../controllers/auth.controller.js");
 const {
   createMatch,
   updateMatchScore,
+  updateMatchFinish,
 } = require("../controllers/score.controller.js");
 const crypto = require("crypto");
 const cron = require("node-cron");
@@ -257,6 +258,7 @@ const socketController = async (socket, socketIO, app) => {
           updatedMatch.p1.legs_won > 2 ||
           updatedMatch.p2.legs_won > 2
         ) {
+          updateMatchFinish(token);
           socket.to(opponentId).emit("finish-match");
         } else {
           socket.to(opponentId).emit("score-update-response", {
@@ -268,6 +270,10 @@ const socketController = async (socket, socketIO, app) => {
       }
     }
   );
+
+  socket.on("match-finish", async ({ token }) => {
+    updateMatchFinish(token);
+  });
 
   socket.on(
     "schedule-challenge",
