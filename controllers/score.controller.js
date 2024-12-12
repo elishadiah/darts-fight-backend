@@ -119,6 +119,7 @@ const updateMatchScore = async (token, score, user) => {
       player.scoreHistory[match.legNo - 1] = {
         ...player.scoreHistory[match.legNo - 1],
         to_finish: score,
+        scores: player.scoreHistory[match.legNo - 1].scores,
       };
       match.legNo = match.legNo + 1;
     }
