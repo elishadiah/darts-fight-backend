@@ -1,9 +1,4 @@
-export const updateCurrentStreaks = (
-  user,
-  opponent,
-  userInit,
-  opponentInit
-) => {
+const updateCurrentStreaks = (user, opponent, userInit, opponentInit) => {
   const won = user.legs_won > opponent.legs_won;
   const userPreviousWin = userInit.previousWin === true;
   const opponentPreviousWin = opponentInit.previousWin === true;
@@ -43,7 +38,7 @@ export const updateCurrentStreaks = (
   };
 };
 
-export const updateWinsAndLevel = (
+const updateWinsAndLevel = (
   user,
   opponent,
   userInit,
@@ -82,7 +77,7 @@ export const updateWinsAndLevel = (
   };
 };
 
-export const updatePyramidClimber = (
+const updatePyramidClimber = (
   updatedUser,
   updatedOpponent,
   userInit,
@@ -112,12 +107,7 @@ export const updatePyramidClimber = (
   };
 };
 
-export const updatePyramidProtector = (
-  user,
-  opponent,
-  userInit,
-  opponentInit
-) => {
+const updatePyramidProtector = (user, opponent, userInit, opponentInit) => {
   const won = user.legs_won > opponent.legs_won;
 
   const updateProtector = (initLevel, opponentLevel, protector, won) => ({
@@ -151,7 +141,7 @@ export const updatePyramidProtector = (
   };
 };
 
-export const updateLegendaryRivalry = (userInit, opponentInit) => {
+const updateLegendaryRivalry = (userInit, opponentInit) => {
   const opponentUsername = opponentInit.username?.toLowerCase();
   const userUsername = userInit.username?.toLowerCase();
 
@@ -184,7 +174,7 @@ export const updateLegendaryRivalry = (userInit, opponentInit) => {
   };
 };
 
-export const updateMaster180 = (user, opponent, userInit, opponentInit) => {
+const updateMaster180 = (user, opponent, userInit, opponentInit) => {
   return {
     user: {
       master180: {
@@ -201,7 +191,7 @@ export const updateMaster180 = (user, opponent, userInit, opponentInit) => {
   };
 };
 
-export const updateGrandMaster = (user, opponent, userInit, opponentInit) => {
+const updateGrandMaster = (user, opponent, userInit, opponentInit) => {
   const calculateAverage = (scoreHistory) => {
     const legs = scoreHistory
       .filter((val) => val.scores.length > 0)
@@ -240,7 +230,7 @@ export const updateGrandMaster = (user, opponent, userInit, opponentInit) => {
   };
 };
 
-export const updateMaxMarksman = (user, opponent) => {
+const updateMaxMarksman = (user, opponent) => {
   return {
     user: {
       maxMarksman: user.p171 > 0,
@@ -251,7 +241,7 @@ export const updateMaxMarksman = (user, opponent) => {
   };
 };
 
-export const updateDartEnthusiast = (userInit) => {
+const updateDartEnthusiast = (userInit) => {
   return {
     dartEnthusiast: {
       lifetime: Number(userInit.dartEnthusiast.lifetime) + 1,
@@ -282,7 +272,7 @@ export const updateDartEnthusiast = (userInit) => {
 //   };
 // };
 
-export const updateMaxStreaks = (user, opponent, userInit, opponentInit) => {
+const updateMaxStreaks = (user, opponent, userInit, opponentInit) => {
   const won = user.legs_won > opponent.legs_won;
   const updateStreak = (init, won) => ({
     maxVictoryStreak: won
@@ -299,7 +289,7 @@ export const updateMaxStreaks = (user, opponent, userInit, opponentInit) => {
   };
 };
 
-export const updateFriendlyChallenger = (userInit) => {
+const updateFriendlyChallenger = (userInit) => {
   return {
     friendlyChallenger: {
       lifetime: Number(userInit.friendlyChallenger.lifetime) + 1,
@@ -308,7 +298,7 @@ export const updateFriendlyChallenger = (userInit) => {
   };
 };
 
-export const updateMonthlyMaestro = (userInit, userUpdate) => {
+const updateMonthlyMaestro = (userInit, userUpdate) => {
   return {
     monthlyMaestro: {
       lifetime:
@@ -323,13 +313,13 @@ export const updateMonthlyMaestro = (userInit, userUpdate) => {
   };
 };
 
-export const updateChampionChallenger = (opponentInit) => {
+const updateChampionChallenger = (opponentInit) => {
   return {
     championChallenger: opponentInit.level === 6 ? true : false,
   };
 };
 
-export const updateReadyForIt = (userInit) => {
+const updateReadyForIt = (userInit) => {
   return {
     readyForIt: {
       lifetime: Number(userInit.readyForIt.lifetime) + 1,
@@ -338,7 +328,7 @@ export const updateReadyForIt = (userInit) => {
   };
 };
 
-export const updateChallengeConqueror = (user, opponent, opponentInit) => {
+const updateChallengeConqueror = (user, opponent, opponentInit) => {
   return {
     challengeConqueror: {
       lifetime:
@@ -353,7 +343,7 @@ export const updateChallengeConqueror = (user, opponent, opponentInit) => {
   };
 };
 
-export const updateSummary = (date, user, userUpdate, userInit) => {
+const updateSummary = (date, user, userUpdate, userInit) => {
   const calculateAverage = (scoreHistory) => {
     const legs = scoreHistory
       .filter((val) => val.scores.length > 0)
@@ -383,7 +373,7 @@ export const updateSummary = (date, user, userUpdate, userInit) => {
   };
 };
 
-export const updateConsistentScorer = (user, userInit) => {
+const updateConsistentScorer = (user, userInit) => {
   let cnt = 0;
   user.scoreHistory.forEach((val) => {
     if (val.scores.length > 0) {
@@ -403,7 +393,7 @@ export const updateConsistentScorer = (user, userInit) => {
   };
 };
 
-export const updateMaster26 = (user, userInit) => {
+const updateMaster26 = (user, userInit) => {
   return {
     master26: {
       lifetime: userInit.master26.lifetime + user.p26,
@@ -412,11 +402,33 @@ export const updateMaster26 = (user, userInit) => {
   };
 };
 
-export const updateThrowCount = (user, userInit) => {
+const updateThrowCount = (user, userInit) => {
   return {
     throwCount: {
       lifetime: userInit.throwCount.lifetime + user.darts_thrown,
       season: userInit.throwCount.season + user.darts_thrown,
     },
   };
+};
+
+module.exports = {
+  updateCurrentStreaks,
+  updateWinsAndLevel,
+  updatePyramidClimber,
+  updatePyramidProtector,
+  updateLegendaryRivalry,
+  updateMaster180,
+  updateGrandMaster,
+  updateMaxMarksman,
+  updateDartEnthusiast,
+  updateMaxStreaks,
+  updateFriendlyChallenger,
+  updateMonthlyMaestro,
+  updateChampionChallenger,
+  updateReadyForIt,
+  updateChallengeConqueror,
+  updateSummary,
+  updateConsistentScorer,
+  updateMaster26,
+  updateThrowCount,
 };
