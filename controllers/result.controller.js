@@ -7,6 +7,27 @@ const UserModel = require("../models/user.model");
 const ScheduleModel = require("../models/schedule.model");
 const CommunityModel = require("../models/community.model");
 const axios = require("axios");
+const {
+  updateCurrentStreaks,
+  updateWinsAndLevel,
+  updatePyramidClimber,
+  updatePyramidProtector,
+  updateLegendaryRivalry,
+  updateMaster180,
+  updateGrandMaster,
+  updateMaxMarksman,
+  updateDartEnthusiast,
+  updateMaxStreaks,
+  updateFriendlyChallenger,
+  updateMonthlyMaestro,
+  updateChampionChallenger,
+  updateReadyForIt,
+  updateChallengeConqueror,
+  updateSummary,
+  updateConsistentScorer,
+  updateMaster26,
+  updateThrowCount,
+} = require("../utils/resultUtils");
 
 const getSubResult = (req, res) => {
   const { url } = req.body;
@@ -468,6 +489,138 @@ const postResult = async (req, res) => {
   console.log("Result-Req-->>", req.body);
 };
 
+const getUpdatedAchievements = (initial, updated) => {
+  const updatedAchievements = {};
+  for (const key in initial) {
+    if (initial[key] !== updated[key]) {
+      updatedAchievements[key] = {
+        initial: initial[key],
+        updated: updated[key],
+      };
+    }
+  }
+  return updatedAchievements;
+};
+
+const updateAchievements = async (data) => {
+  try {
+    const player1Result = await ResultModel.findOne({ username: data.p1.name });
+    const player2Result = await ResultModel.findOne({ username: data.p2.name });
+
+    if (!player1Result || !player2Result) {
+      throw new Error("Player results not found");
+    }
+
+    const initialAchievements = {
+      player1: { ...player1Result.toObject() },
+      player2: { ...player2Result.toObject() },
+    };
+
+    const availablePositionNo = Math.pow(2, 7 - player1Result.level);
+    const currentAbovePlayersNo = await ResultModel.countDocuments({
+      level: player1Result.level + 1,
+    });
+    const rowSpotNo = availablePositionNo - currentAbovePlayersNo;
+
+    const { user: player1Streaks, opponent: player2Streaks } =
+      updateCurrentStreaks(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1Wins, opponent: player2Wins } = updateWinsAndLevel(
+      data.p1,
+      data.p2,
+      player1Result,
+      player2Result,
+      rowSpotNo
+    );
+    const { user: player1Protector, opponent: player2Protector } =
+      updatePyramidProtector(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1Legendary, opponent: player2Legendary } =
+      updateLegendaryRivalry(player1Result, player2Result);
+    const { user: player1Master180, opponent: player2Master180 } =
+      updateMaster180(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1GrandMaster, opponent: player2GrandMaster } =
+      updateGrandMaster(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1MaxMarksMan, opponent: player2MaxMarksMan } =
+      updateMaxMarksman(data.p1, data.p2);
+    const { user: player1MaxStreaks, opponent: player2MaxStreaks } =
+      updateMaxStreaks(data.p1, data.p2, player1Result, player2Result);
+
+    const [updatedUser, updatedOpponent] = await Promise.all([
+      ResultModel.findByIdAndUpdate(
+        player1Result._id,
+        {
+          ...player1Streaks,
+          ...player1Wins,
+          ...player1Protector,
+          ...player1Legendary,
+          ...player1Master180,
+          ...player1GrandMaster,
+          ...player1MaxMarksMan,
+          ...updateDartEnthusiast(player1Result),
+          ...player1MaxStreaks,
+          ...updateFriendlyChallenger(player1Result),
+          ...updateChampionChallenger(player2Result),
+          ...updateConsistentScorer(data.p1, player1Result),
+          ...updateMaster26(data.p1, player1Result),
+          ...updateThrowCount(data.p1, player1Result),
+        },
+        { new: true }
+      ),
+      ResultModel.findByIdAndUpdate(
+        player2Result._id,
+        {
+          ...player2Streaks,
+          ...player2Wins,
+          ...player2Protector,
+          ...player2Legendary,
+          ...player2Master180,
+          ...player2GrandMaster,
+          ...player2MaxMarksMan,
+          ...player2MaxStreaks,
+          ...updateReadyForIt(player2Result),
+          ...updateChallengeConqueror(data.p1, data.p2, player2Result),
+          ...updateConsistentScorer(data.p2, player2Result),
+          ...updateMaster26(data.p2, player2Result),
+          ...updateThrowCount(data.p2, player2Result),
+        },
+        { new: true }
+      ),
+    ]);
+
+    const { user: player1PyramidClimber, opponent: player2PyramidClimber } =
+      updatePyramidClimber(
+        updatedUser,
+        updatedOpponent,
+        player1Result,
+        player2Result
+      );
+
+    const [finalUser, finalOpponent] = await Promise.all([
+      ResultModel.findByIdAndUpdate(player1Result._id, {
+        ...player1PyramidClimber,
+        ...updateMonthlyMaestro(player1Result, updatedUser),
+        ...updateSummary(data.date, data.p1, updatedUser, player1Result),
+      }),
+      ResultModel.findByIdAndUpdate(player2Result._id, {
+        ...player2PyramidClimber,
+        ...updateMonthlyMaestro(player2Result, updatedOpponent),
+        ...updateSummary(data.date, data.p2, updatedOpponent, player2Result),
+      }),
+    ]);
+
+    const updatedAchievementsList = {
+      player1: getUpdatedAchievements(initialAchievements.player1, finalUser),
+      player2: getUpdatedAchievements(
+        initialAchievements.player2,
+        finalOpponent
+      ),
+    };
+
+    console.log("Updated Achievements:", updatedAchievementsList);
+  } catch (err) {
+    console.log("update-achievements-err-->>>", err);
+  }
+};
+
 const inactiveUser = async (req, res) => {
   try {
     await ResultModel.findByIdAndUpdate(req.body.id, {
@@ -622,4 +775,5 @@ module.exports = {
   bulkActivateUsers,
   fetchAllResultsAndUsers,
   jacksVictoryAchievement,
+  updateAchievements,
 };

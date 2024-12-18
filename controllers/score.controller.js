@@ -90,8 +90,12 @@ const updateMatchScore = async (token, score, user) => {
     history.push(score);
     player.scoreHistory[match.legNo - 1].scores = history;
 
+    player.darts_thrown = (player.darts_thrown || 0) + 3;
+
     if (score === 180) {
       player.p180 = player.p180 + 1;
+    } else if (score === 171) {
+      player.p171 = player.p171 + 1;
     } else if (score >= 160) {
       player.p160 = player.p160 + 1;
     } else if (score >= 140) {
