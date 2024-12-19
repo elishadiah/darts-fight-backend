@@ -161,7 +161,8 @@ const updateMatchFinish = async (token) => {
 
     match.isFinished = true;
 
-    await match.save();
+    const updatedMath = await match.save();
+    return updatedMath;
   } catch (err) {
     console.log("match-finish-err-->>>", err);
   }

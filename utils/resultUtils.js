@@ -25,12 +25,12 @@ const updateCurrentStreaks = (user, opponent, userInit, opponentInit) => {
     },
     opponent: {
       currentVictoryStreak: getCurrentStreak(
-        won,
+        !won,
         opponentPreviousWin,
         opponentInit.currentVictoryStreak
       ),
       seasonCurrentVictoryStreak: getCurrentStreak(
-        won,
+        !won,
         opponentPreviousWin,
         opponentInit.seasonCurrentVictoryStreak
       ),
@@ -272,20 +272,26 @@ const updateDartEnthusiast = (userInit) => {
 //   };
 // };
 
-const updateMaxStreaks = (user, opponent, userInit, opponentInit) => {
-  const won = user.legs_won > opponent.legs_won;
-  const updateStreak = (init, won) => ({
-    maxVictoryStreak: won
-      ? init.currentVictoryStreak + 1
-      : init.maxVictoryStreak,
-    seasonMaxVictoryStreak: won
-      ? init.seasonCurrentVictoryStreak + 1
-      : init.seasonMaxVictoryStreak,
+const updateMaxStreaks = (
+  updateUser,
+  updateOpponent,
+  userInit,
+  opponentInit
+) => {
+  const updateStreak = (init, update) => ({
+    maxVictoryStreak:
+      update.currentVictoryStreak > init.maxVictoryStreak
+        ? update.currentVictoryStreak
+        : init.maxVictoryStreak,
+    seasonMaxVictoryStreak:
+      update.seasonCurrentVictoryStreak > init.seasonMaxVictoryStreak
+        ? update.seasonCurrentVictoryStreak
+        : init.seasonMaxVictoryStreak,
   });
 
   return {
-    user: updateStreak(userInit, won),
-    opponent: updateStreak(opponentInit, !won),
+    user: updateStreak(userInit, updateUser),
+    opponent: updateStreak(opponentInit, updateOpponent),
   };
 };
 
@@ -411,6 +417,36 @@ const updateThrowCount = (user, userInit) => {
   };
 };
 
+const getHighMarks = () => {
+  const highMarks = [170, 167, 164, 161, 160, 158];
+  for (let i = 157; i > 100; i--) {
+    highMarks.push(i);
+  }
+  return highMarks;
+};
+
+const updateHighFinish = (user, userInit) => {
+  const highMarks = getHighMarks();
+  let highFinish = userInit.highFinish;
+
+  user?.scoreHistory.forEach((val) => {
+    if (val.hasOwnProperty("to_finish")) {
+      const high = highMarks.findIndex(
+        (mark) => mark === val.scores[val.scores.length - 1]
+      );
+      if (high >= 0) {
+        highFinish = userInit.highFinish.map((item, index) =>
+          index === high ? 1 : item
+        );
+      }
+    }
+  });
+
+  return {
+    highFinish,
+  };
+};
+
 module.exports = {
   updateCurrentStreaks,
   updateWinsAndLevel,
@@ -431,4 +467,5 @@ module.exports = {
   updateConsistentScorer,
   updateMaster26,
   updateThrowCount,
+  updateHighFinish,
 };

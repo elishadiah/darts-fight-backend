@@ -12,6 +12,7 @@ const {
   bulkActivateUsers,
   fetchAllResultsAndUsers,
   jacksVictoryAchievement,
+  finishMatchAPI,
 } = require("../controllers/result.controller.js");
 
 const router = express.Router();
@@ -28,5 +29,7 @@ router.post('/migrate', migrateField);
 router.post('/bulk-activate', bulkActivateUsers);
 router.get('/fetch-all-results-and-users', fetchAllResultsAndUsers);
 router.post('/jacks-victory', jacksVictoryAchievement);
+
+router.post('/finish-match', finishMatchAPI);
 
 module.exports = router;
