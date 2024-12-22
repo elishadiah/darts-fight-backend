@@ -32,6 +32,8 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
+        initialResult: {},
+        updatedResult: {},
       },
       p2: {
         name: opponent,
@@ -52,6 +54,8 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
+        initialResult: {},
+        updatedResult: {},
       },
     });
 
