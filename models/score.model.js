@@ -37,7 +37,7 @@ const summarySchema = new Schema({
   date: { type: Date, default: Date.now },
 });
 
-const ResultSchema = new Schema(
+const AchievementSchema = new Schema(
   {
     master26: {
       type: detailSchema,
@@ -160,8 +160,8 @@ const playerSchema = new Schema({
   match_avg: Number,
   currentScore: Number,
   scoreHistory: [scoreHistorySchema],
-  initialResult: ResultSchema,
-  updatedResult: ResultSchema,
+  initialResult: AchievementSchema,
+  updatedResult: AchievementSchema,
   name: String,
 });
 
