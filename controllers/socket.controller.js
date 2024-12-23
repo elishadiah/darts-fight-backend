@@ -187,12 +187,20 @@ const socketController = async (socket, socketIO, app) => {
     async ({ toId, opponent, challenger, paymentOption, token, type }) => {
       try {
         console.log("quick-accept-->>", toId);
-        socket.to(toId).emit("quick-accept-response", {
-          paymentOption,
-          token,
-          opponent,
-          type,
-        });
+        if (type === "schedule") {
+          socket.to(toId).emit("schedule-accept-response", {
+            token,
+            opponent,
+            type,
+          });
+        } else {
+          socket.to(toId).emit("quick-accept-response", {
+            paymentOption,
+            token,
+            opponent,
+            type,
+          });
+        }
 
         await createMatch(challenger, opponent, token);
 
@@ -274,8 +282,9 @@ const socketController = async (socket, socketIO, app) => {
     }
   );
 
-  socket.on("match-finish", async ({ token }) => {
+  socket.on("match-finish", async ({ token, opponentId }) => {
     updateMatchFinish(token);
+    socket.to(opponentId).emit("finish-match");
   });
 
   socket.on(
