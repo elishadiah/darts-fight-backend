@@ -1,4 +1,5 @@
 const ScoreModel = require("../models/score.model.js");
+const ResultModel = require("../models/result.model.js");
 
 const getScores = async (req, res) => {
   try {
@@ -11,7 +12,12 @@ const getScores = async (req, res) => {
 
 const createMatch = async (challenger, opponent, token) => {
   try {
-    const newMatch = new ScoreModel({
+    const [player1Result, player2Result] = await Promise.all([
+      ResultModel.findOne({ username: challenger }),
+      ResultModel.findOne({ username: opponent }),
+    ]);
+
+    await ScoreModel.create({
       token,
       p1: {
         name: challenger,
@@ -32,8 +38,7 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
-        initialResult: { username: challenger },
-        updatedResult: { username: challenger },
+        initialResult: { ...player1Result },
       },
       p2: {
         name: opponent,
@@ -54,12 +59,11 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
-        initialResult: { username: opponent },
-        updatedResult: { username: opponent },
+        initialResult: { ...player2Result },
       },
     });
 
-    await newMatch.save();
+    console.log("Match created successfully");
   } catch (err) {
     console.log("create-match-err->", err);
   }

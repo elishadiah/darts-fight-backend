@@ -613,39 +613,12 @@ const updateAchievements = async (data) => {
       }),
     ]);
 
-    // const updateScoreModel = (playerResult, finalResult) => ({
-    //   master26: finalResult.master26,
-    //   highFinish: finalResult.highFinish,
-    //   friendlyChallenger: finalResult.friendlyChallenger,
-    //   currentVictoryStreak: finalResult.currentVictoryStreak,
-    //   seasonCurrentVictoryStreak: finalResult.seasonCurrentVictoryStreak,
-    //   maxVictoryStreak: finalResult.maxVictoryStreak,
-    //   seasonMaxVictoryStreak: finalResult.seasonMaxVictoryStreak,
-    //   monthlyMaestro: finalResult.monthlyMaestro,
-    //   pyramidClimber: finalResult.pyramidClimber,
-    //   challengeConqueror: finalResult.challengeConqueror,
-    //   pyramidProtector: finalResult.pyramidProtector,
-    //   legendaryRivalry: finalResult.legendaryRivalry,
-    //   ironDart: finalResult.ironDart,
-    //   master180: finalResult.master180,
-    //   consistentScorer: finalResult.consistentScorer,
-    //   grandMaster: finalResult.grandMaster,
-    //   maxMarksman: finalResult.maxMarksman,
-    //   dartEnthusiast: finalResult.dartEnthusiast,
-    //   comeback: finalResult.comeback,
-    //   readyForIt: finalResult.readyForIt,
-    //   throwCount: finalResult.throwCount,
-    //   championChallenger: finalResult.championChallenger,
-    //   level: finalResult.level,
-    //   summary: finalResult.summary,
-    // });
-
     await ScoreModel.findOneAndUpdate(
       { token },
       {
-        "p1.initialResult": { ...player1Result },
+        // "p1.initialResult": { ...player1Result },
         "p1.updatedResult": { ...finalUser },
-        "p2.initialResult": { ...player2Result },
+        // "p2.initialResult": { ...player2Result },
         "p2.updatedResult": { ...finalOpponent },
       }
     );
