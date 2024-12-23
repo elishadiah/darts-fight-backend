@@ -515,12 +515,8 @@ const finishMatchAPI = async (req, res) => {
 
 const updateAchievements = async (data) => {
   try {
-    const { p1, p2, token, date } = data;
-
-    const [player1Result, player2Result] = await Promise.all([
-      ResultModel.findOne({ username: p1.name }),
-      ResultModel.findOne({ username: p2.name }),
-    ]);
+    const player1Result = await ResultModel.findOne({ username: data.p1.name });
+    const player2Result = await ResultModel.findOne({ username: data.p2.name });
 
     if (!player1Result || !player2Result) {
       throw new Error("Player results not found");
@@ -532,94 +528,100 @@ const updateAchievements = async (data) => {
     });
     const rowSpotNo = availablePositionNo - currentAbovePlayersNo;
 
-    const updateFunctions = [
-      updateCurrentStreaks,
-      updateWinsAndLevel,
-      updatePyramidProtector,
-      updateLegendaryRivalry,
-      updateMaster180,
-      updateGrandMaster,
-      updateMaxMarksman,
-    ];
-
-    const player1Updates = {};
-    const player2Updates = {};
-
-    for (const updateFunction of updateFunctions) {
-      const { user: player1Update, opponent: player2Update } = updateFunction(
-        p1,
-        p2,
-        player1Result,
-        player2Result,
-        rowSpotNo
-      );
-      Object.assign(player1Updates, player1Update);
-      Object.assign(player2Updates, player2Update);
-    }
+    const { user: player1Streaks, opponent: player2Streaks } =
+      updateCurrentStreaks(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1Wins, opponent: player2Wins } = updateWinsAndLevel(
+      data.p1,
+      data.p2,
+      player1Result,
+      player2Result,
+      rowSpotNo
+    );
+    const { user: player1Protector, opponent: player2Protector } =
+      updatePyramidProtector(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1Legendary, opponent: player2Legendary } =
+      updateLegendaryRivalry(player1Result, player2Result);
+    const { user: player1Master180, opponent: player2Master180 } =
+      updateMaster180(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1GrandMaster, opponent: player2GrandMaster } =
+      updateGrandMaster(data.p1, data.p2, player1Result, player2Result);
+    const { user: player1MaxMarksMan, opponent: player2MaxMarksMan } =
+      updateMaxMarksman(data.p1, data.p2);
 
     const [updatedUser, updatedOpponent] = await Promise.all([
       ResultModel.findByIdAndUpdate(
         player1Result._id,
         {
-          ...player1Updates,
+          ...player1Streaks,
+          ...player1Wins,
+          ...player1Protector,
+          ...player1Legendary,
+          ...player1Master180,
+          ...player1GrandMaster,
+          ...player1MaxMarksMan,
           ...updateDartEnthusiast(player1Result),
           ...updateFriendlyChallenger(player1Result),
           ...updateChampionChallenger(player2Result),
-          ...updateConsistentScorer(p1, player1Result),
-          ...updateMaster26(p1, player1Result),
-          ...updateThrowCount(p1, player1Result),
-          ...updateHighFinish(p1, player1Result),
+          ...updateConsistentScorer(data.p1, player1Result),
+          ...updateMaster26(data.p1, player1Result),
+          ...updateThrowCount(data.p1, player1Result),
+          ...updateHighFinish(data.p1, player1Result),
         },
         { new: true }
       ),
       ResultModel.findByIdAndUpdate(
         player2Result._id,
         {
-          ...player2Updates,
+          ...player2Streaks,
+          ...player2Wins,
+          ...player2Protector,
+          ...player2Legendary,
+          ...player2Master180,
+          ...player2GrandMaster,
+          ...player2MaxMarksMan,
           ...updateReadyForIt(player2Result),
-          ...updateChallengeConqueror(p1, p2, player2Result),
-          ...updateConsistentScorer(p2, player2Result),
-          ...updateMaster26(p2, player2Result),
-          ...updateThrowCount(p2, player2Result),
-          ...updateHighFinish(p2, player2Result),
+          ...updateChallengeConqueror(data.p1, data.p2, player2Result),
+          ...updateConsistentScorer(data.p2, player2Result),
+          ...updateMaster26(data.p2, player2Result),
+          ...updateThrowCount(data.p2, player2Result),
+          ...updateHighFinish(data.p2, player2Result),
         },
         { new: true }
       ),
     ]);
 
-    const finalUpdates = [updatePyramidClimber, updateMaxStreaks];
-
-    for (const updateFunction of finalUpdates) {
-      const { user: player1Update, opponent: player2Update } = updateFunction(
+    const { user: player1PyramidClimber, opponent: player2PyramidClimber } =
+      updatePyramidClimber(
         updatedUser,
         updatedOpponent,
         player1Result,
         player2Result
       );
-      Object.assign(player1Updates, player1Update);
-      Object.assign(player2Updates, player2Update);
-    }
+    const { user: player1MaxStreaks, opponent: player2MaxStreaks } =
+      updateMaxStreaks(data.p1, data.p2, player1Result, player2Result);
 
     const [finalUser, finalOpponent] = await Promise.all([
       ResultModel.findByIdAndUpdate(player1Result._id, {
-        ...player1Updates,
+        ...player1PyramidClimber,
+        ...player1MaxStreaks,
         ...updateMonthlyMaestro(player1Result, updatedUser),
-        ...updateSummary(date, p1, updatedUser, player1Result),
+        ...updateSummary(data.date, data.p1, updatedUser, player1Result),
       }),
       ResultModel.findByIdAndUpdate(player2Result._id, {
-        ...player2Updates,
+        ...player2PyramidClimber,
+        ...player2MaxStreaks,
         ...updateMonthlyMaestro(player2Result, updatedOpponent),
-        ...updateSummary(date, p2, updatedOpponent, player2Result),
+        ...updateSummary(data.date, data.p2, updatedOpponent, player2Result),
       }),
     ]);
 
     await ScoreModel.findOneAndUpdate(
-      { token },
+      { token: data.token },
       {
-        // "p1.initialResult": { ...player1Result },
-        "p1.updatedResult": { ...finalUser },
-        // "p2.initialResult": { ...player2Result },
-        "p2.updatedResult": { ...finalOpponent },
+        // "p1.initialResult": {...player1Result},
+        "p1.updatedResult": {...finalUser},
+        // "p2.initialResult": {...player2Result},
+        "p2.updatedResult": {...finalOpponent},
       }
     );
 
