@@ -74,8 +74,8 @@ const vAvatars = [
   },
 ];
 
-const updateXPAndRank = async (userId, xpToAdd) => {
-  const user = await UserModel.findById(userId);
+const updateXPAndRank = async (username, xpToAdd) => {
+  const user = await UserModel.findOne({ username });
   if (!user) throw new Error("User not found");
 
   const result = await ResultModel.findOne({ username: user.username });
@@ -192,7 +192,7 @@ const loginUser = async (req, res) => {
     await user.save();
 
     if (user.isFirstLogin) {
-      await updateXPAndRank(user._id, 10);
+      await updateXPAndRank(user.username, 10);
       user.isFirstLogin = false;
       await user.save();
     }
@@ -738,12 +738,12 @@ const getBalance = async (req, res) => {
 const updateUserXPAndRank = async (req, res) => {
   try {
     const { username, xpToAdd } = req.body;
-    const user = await UserModel.findOne({ username: username });
-    if (!user) return res.status(404).send("User not found");
+    // const user = await UserModel.findOne({ username: username });
+    // if (!user) return res.status(404).send("User not found");
 
-    console.log("username, xpToAdd-->>>", user);
+    // console.log("username, xpToAdd-->>>", user);
 
-    updateXPAndRank(user._id, xpToAdd);
+    updateXPAndRank(username, xpToAdd);
 
     res.status(200).send({
       msg: "XP and Rank updated successfully.",

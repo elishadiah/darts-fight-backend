@@ -30,6 +30,7 @@ const {
   updateThrowCount,
   updateHighFinish,
 } = require("../utils/resultUtils");
+const { updateXPAndRank } = require("./auth.controller");
 
 const getSubResult = (req, res) => {
   const { url } = req.body;
@@ -619,11 +620,27 @@ const updateAchievements = async (data) => {
       { token: data.token },
       {
         // "p1.initialResult": {...player1Result},
-        "p1.updatedResult": {...finalUser},
+        "p1.updatedResult": { ...finalUser },
         // "p2.initialResult": {...player2Result},
-        "p2.updatedResult": {...finalOpponent},
+        "p2.updatedResult": { ...finalOpponent },
       }
     );
+
+    await EventModel.create({
+      eventType: "match",
+      user: data.p1.name,
+      targetUser: data.p2.name,
+      match: {
+        link: data.token,
+        user1Won: data.p1.legs_won,
+        user2Won: data.p2.legs_won,
+        // achievements: data.earnedAchievements,
+      },
+    });
+
+    // await Promise.all([
+    //   updateXPAndRank(data.p1.name, ),
+    // ])
 
     console.log("Updated Achievements: success");
   } catch (err) {

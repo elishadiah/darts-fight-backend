@@ -143,8 +143,8 @@ const socketController = async (socket, socketIO, app) => {
           type,
         });
 
-        const challenger = await UserModel.findOne({ username: from });
-        updateXPAndRank(challenger._id, 20);
+        // const challenger = await UserModel.findOne({ username: from });
+        updateXPAndRank(from, 20);
       } catch (err) {
         console.log("challenge--err>>", err);
       }
@@ -204,8 +204,8 @@ const socketController = async (socket, socketIO, app) => {
 
         await createMatch(challenger, opponent, token);
 
-        const user = await UserModel.findOne({ username: opponent });
-        updateXPAndRank(user._id, 20);
+        // const user = await UserModel.findOne({ username: opponent });
+        updateXPAndRank(opponent, 20);
       } catch (err) {
         console.log("quick--accept--error-->>", err);
       }
