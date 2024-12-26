@@ -631,7 +631,7 @@ const updateAchievements = async (data) => {
       user: data.p1.name,
       targetUser: data.p2.name,
       match: {
-        link: data.token,
+        link: `/result/${data.token}/quick`,
         user1Won: data.p1.legs_won,
         user2Won: data.p2.legs_won,
         // achievements: data.earnedAchievements,
