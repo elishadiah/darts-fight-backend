@@ -165,6 +165,11 @@ const playerSchema = new Schema({
   name: String,
 });
 
+const bullSchema = new Schema({
+  score: Number,
+  username: String,
+});
+
 const ScoreSchema = new Schema(
   {
     date: { type: Date, default: new Date() },
@@ -174,6 +179,8 @@ const ScoreSchema = new Schema(
     isFinished: { type: Boolean, default: false },
     p1: playerSchema,
     p2: playerSchema,
+    bullScores: [bullSchema],
+    bullModal: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

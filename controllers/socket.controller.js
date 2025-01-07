@@ -104,7 +104,16 @@ const socketController = async (socket, socketIO, app) => {
   // forward the private message to the right recipient (and to other tabs of the sender)
   socket.on(
     "challenge",
-    async ({ message, toId, fromId, to, from, paymentOption, scoringOption, type }) => {
+    async ({
+      message,
+      toId,
+      fromId,
+      to,
+      from,
+      paymentOption,
+      scoringOption,
+      type,
+    }) => {
       const notification = new NotificationModel({
         message,
         to: toId,
@@ -185,7 +194,15 @@ const socketController = async (socket, socketIO, app) => {
 
   socket.on(
     "quick-accept",
-    async ({ toId, opponent, challenger, paymentOption, scoringOption, token, type }) => {
+    async ({
+      toId,
+      opponent,
+      challenger,
+      paymentOption,
+      scoringOption,
+      token,
+      type,
+    }) => {
       try {
         console.log("quick-accept-->>", toId);
         if (type === "schedule") {
@@ -205,7 +222,7 @@ const socketController = async (socket, socketIO, app) => {
           });
         }
 
-        if (scoringOption === 'own') {
+        if (scoringOption === "own") {
           await createMatch(challenger, opponent, token);
         }
 

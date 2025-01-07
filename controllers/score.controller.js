@@ -1,5 +1,6 @@
 const ScoreModel = require("../models/score.model.js");
 const ResultModel = require("../models/result.model.js");
+const UserModel = require("../models/user.model.js");
 
 const getScores = async (req, res) => {
   try {
@@ -19,6 +20,7 @@ const createMatch = async (challenger, opponent, token) => {
 
     await ScoreModel.create({
       token,
+      bullScores: [],
       p1: {
         name: challenger,
         currentScore: 501,
@@ -124,6 +126,8 @@ const updateMatchScore = async (token, score, user) => {
       player.p0 = player.p0 + 1;
     }
 
+    match.challengerTurn = user !== match.p1.name;
+
     if (currentScore - score === 0) {
       player.currentScore = 501;
       player.legs_won = (player.legs_won || 0) + 1;
@@ -134,9 +138,56 @@ const updateMatchScore = async (token, score, user) => {
         scores: player.scoreHistory[match.legNo - 1].scores,
       };
       match.legNo = match.legNo + 1;
-    }
 
-    match.challengerTurn = user !== match.p1.name;
+      const p1BullScore = match.bullScores.find(
+        (bull) => bull.username === match.p1.name
+      ).score;
+      const p2BullScore = match.bullScores.find(
+        (bull) => bull.username === match.p2.name
+      ).score;
+
+      if (p1BullScore > p2BullScore) {
+        switch (match.legNo) {
+          case 1:
+            match.challengerTurn = true;
+            break;
+          case 2:
+            match.challengerTurn = false;
+            break;
+          case 3:
+            match.challengerTurn = true;
+            break;
+          case 4:
+            match.challengerTurn = false;
+            break;
+          case 5:
+            match.challengerTurn = true;
+            break;
+          default:
+            break;
+        }
+      } else {
+        switch (match.legNo) {
+          case 1:
+            match.challengerTurn = false;
+            break;
+          case 2:
+            match.challengerTurn = true;
+            break;
+          case 3:
+            match.challengerTurn = false;
+            break;
+          case 4:
+            match.challengerTurn = true;
+            break;
+          case 5:
+            match.challengerTurn = false;
+            break;
+          default:
+            break;
+        }
+      }
+    }
 
     const updateMatch = await match.save();
 
@@ -208,6 +259,60 @@ const updateDouble = async (req, res) => {
   }
 };
 
+const updateBullScore = async (req, res) => {
+  try {
+    const { token, score, username } = req.body;
+    const match = await ScoreModel.findOne({ token });
+
+    if (!match) {
+      return res.status(404).json({ message: "Match not found" });
+    }
+
+    match.bullScores.push({ score, username });
+
+    const updateMatch = await match.save();
+
+    if (updateMatch.bullScores.length === 2) {
+      updateMatch.bullModal = false;
+      let p1BullScore, p2BullScore, opponent;
+      if (username === updateMatch.p1.name) {
+        p1BullScore = score;
+        p2BullScore = updateMatch.bullScores.find(
+          (bull) => bull.username === updateMatch.p2.name
+        ).score;
+      } else {
+        p2BullScore = score;
+        p1BullScore = updateMatch.bullScores.find(
+          (bull) => bull.username === updateMatch.p1.name
+        ).score;
+        opponent = updateMatch.p1.name;
+      }
+      if (p1BullScore > p2BullScore) {
+        updateMatch.challengerTurn = true;
+      } else {
+        updateMatch.challengerTurn = false;
+      }
+
+      const updatedMatch = await updateMatch.save();
+
+      if (opponent) {
+        const user = await UserModel.findOne({ username: opponent });
+        const socket = req.app.get("socketIo");
+        socket.to(user._id.toString()).emit("bull-score", updatedMatch);
+        // socket.emit("bull-score", updatedMatch);
+      }
+
+      return res.json(updatedMatch);
+    }
+
+    res.json(updateMatch);
+  } catch (err) {
+    console.log("update-bull-score-err->", err);
+    res.status(500).json({ message: err.message });
+    throw err;
+  }
+};
+
 module.exports = {
   getScores,
   createMatch,
@@ -215,4 +320,5 @@ module.exports = {
   updateMatchScore,
   updateDouble,
   updateMatchFinish,
+  updateBullScore,
 };
