@@ -280,6 +280,7 @@ const updateBullScore = async (req, res) => {
         p2BullScore = updateMatch.bullScores.find(
           (bull) => bull.username === updateMatch.p2.name
         ).score;
+        opponent = updateMatch.p2.name;
       } else {
         p2BullScore = score;
         p1BullScore = updateMatch.bullScores.find(
