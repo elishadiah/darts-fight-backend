@@ -79,19 +79,18 @@ const updateMatchScore = async (token, score, user) => {
       throw new Error("Match not found");
     }
 
-    let player, opponent;
-    if (user === match.p1.name) {
-      player = match.p1;
-      opponent = match.p2;
-    } else if (user === match.p2.name) {
-      player = match.p2;
-      opponent = match.p1;
-    } else {
-      throw new Error("Invalid user");
-    }
+    const getPlayerAndOpponent = (user) => {
+      if (user === match.p1.name) {
+        return { player: match.p1, opponent: match.p2 };
+      } else if (user === match.p2.name) {
+        return { player: match.p2, opponent: match.p1 };
+      } else {
+        throw new Error("Invalid user");
+      }
+    };
 
-    let currentScore = player.currentScore;
-    player.currentScore = currentScore - score;
+    const { player, opponent } = getPlayerAndOpponent(user);
+    player.currentScore -= score;
 
     if (!player.scoreHistory[match.legNo - 1]) {
       player.scoreHistory[match.legNo - 1] = { scores: [] };
@@ -99,36 +98,32 @@ const updateMatchScore = async (token, score, user) => {
     let history = player.scoreHistory[match.legNo - 1].scores;
     history.push(score);
     player.scoreHistory[match.legNo - 1].scores = history;
-
     player.darts_thrown = (player.darts_thrown || 0) + 3;
 
-    if (score === 180) {
-      player.p180 = player.p180 + 1;
-    } else if (score === 171) {
-      player.p171 = player.p171 + 1;
-    } else if (score >= 160) {
-      player.p160 = player.p160 + 1;
-    } else if (score >= 140) {
-      player.p140 = player.p140 + 1;
-    } else if (score >= 100) {
-      player.p100 = player.p100 + 1;
-    } else if (score >= 80) {
-      player.p80 = player.p80 + 1;
-    } else if (score >= 60) {
-      player.p60 = player.p60 + 1;
-    } else if (score >= 40) {
-      player.p40 = player.p40 + 1;
-    } else if (score === 26) {
-      player.p26 = player.p26 + 1;
-    } else if (score >= 20) {
-      player.p20 = player.p20 + 1;
-    } else if (score >= 0) {
-      player.p0 = player.p0 + 1;
+    const scoreCategories = [
+      { threshold: 180, field: "p180" },
+      { threshold: 171, field: "p171" },
+      { threshold: 160, field: "p160" },
+      { threshold: 140, field: "p140" },
+      { threshold: 100, field: "p100" },
+      { threshold: 80, field: "p80" },
+      { threshold: 60, field: "p60" },
+      { threshold: 40, field: "p40" },
+      { threshold: 26, field: "p26" },
+      { threshold: 20, field: "p20" },
+      { threshold: 0, field: "p0" },
+    ];
+
+    for (const { threshold, field } of scoreCategories) {
+      if (score >= threshold) {
+        player[field] = (player[field] || 0) + 1;
+        break;
+      }
     }
 
     match.challengerTurn = user !== match.p1.name;
 
-    if (currentScore - score === 0) {
+    if (player.currentScore === 0) {
       player.currentScore = 501;
       player.legs_won = (player.legs_won || 0) + 1;
       opponent.currentScore = 501;
@@ -146,47 +141,11 @@ const updateMatchScore = async (token, score, user) => {
         (bull) => bull.username === match.p2.name
       ).score;
 
-      if (p1BullScore > p2BullScore) {
-        switch (match.legNo) {
-          case 1:
-            match.challengerTurn = true;
-            break;
-          case 2:
-            match.challengerTurn = false;
-            break;
-          case 3:
-            match.challengerTurn = true;
-            break;
-          case 4:
-            match.challengerTurn = false;
-            break;
-          case 5:
-            match.challengerTurn = true;
-            break;
-          default:
-            break;
-        }
-      } else {
-        switch (match.legNo) {
-          case 1:
-            match.challengerTurn = false;
-            break;
-          case 2:
-            match.challengerTurn = true;
-            break;
-          case 3:
-            match.challengerTurn = false;
-            break;
-          case 4:
-            match.challengerTurn = true;
-            break;
-          case 5:
-            match.challengerTurn = false;
-            break;
-          default:
-            break;
-        }
-      }
+      const legTurnOrder = [true, false, true, false, true];
+      match.challengerTurn =
+        p1BullScore > p2BullScore
+          ? legTurnOrder[match.legNo - 1]
+          : !legTurnOrder[match.legNo - 1];
     }
 
     const updateMatch = await match.save();
@@ -201,9 +160,7 @@ const updateMatchScore = async (token, score, user) => {
 const getMatchStatus = async (req, res) => {
   try {
     const { token } = req.params;
-
     const match = await ScoreModel.findOne({ token });
-
     res.json(match);
   } catch (err) {
     console.log("get-match-status-->>", err);
@@ -237,12 +194,8 @@ const updateDouble = async (req, res) => {
       return res.status(404).json({ message: "Match not found" });
     }
 
-    let player;
-    if (user === match.p1.name) {
-      player = match.p1;
-    } else if (user === match.p2.name) {
-      player = match.p2;
-    } else {
+    const player = user === match.p1.name ? match.p1 : match.p2;
+    if (!player) {
       return res.status(400).json({ message: "Invalid user" });
     }
 
@@ -250,7 +203,6 @@ const updateDouble = async (req, res) => {
     player.darts_thrown_double += Number(doubles.throw);
 
     const updateMatch = await match.save();
-
     res.json(updateMatch);
   } catch (err) {
     console.log("update-match-err->", err);
@@ -259,7 +211,38 @@ const updateDouble = async (req, res) => {
   }
 };
 
-const updateBullScore = async (req, res) => {
+const updateBullScore = async (token, score, username) => {
+  try {
+    const match = await ScoreModel.findOne({ token });
+
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    match.bullScores.push({ score, username });
+    const updateMatch = await match.save();
+
+    if (updateMatch.bullScores.length === 2) {
+      updateMatch.bullModal = false;
+      const p1BullScore = updateMatch.bullScores.find(
+        (bull) => bull.username === updateMatch.p1.name
+      ).score;
+      const p2BullScore = updateMatch.bullScores.find(
+        (bull) => bull.username === updateMatch.p2.name
+      ).score;
+      updateMatch.challengerTurn = p1BullScore > p2BullScore;
+      const updatedMatch = await updateMatch.save();
+      return updatedMatch;
+    }
+
+    return updateMatch;
+  } catch (err) {
+    console.log("update-bull-score-err->", err);
+    throw err;
+  }
+};
+
+const updateBullScoreApi = async (req, res) => {
   try {
     const { token, score, username } = req.body;
     const match = await ScoreModel.findOne({ token });
@@ -269,39 +252,28 @@ const updateBullScore = async (req, res) => {
     }
 
     match.bullScores.push({ score, username });
-
     const updateMatch = await match.save();
 
     if (updateMatch.bullScores.length === 2) {
       updateMatch.bullModal = false;
-      let p1BullScore, p2BullScore, opponent;
-      if (username === updateMatch.p1.name) {
-        p1BullScore = score;
-        p2BullScore = updateMatch.bullScores.find(
-          (bull) => bull.username === updateMatch.p2.name
-        ).score;
-        opponent = updateMatch.p2.name;
-      } else {
-        p2BullScore = score;
-        p1BullScore = updateMatch.bullScores.find(
-          (bull) => bull.username === updateMatch.p1.name
-        ).score;
-        opponent = updateMatch.p1.name;
-      }
-      if (p1BullScore > p2BullScore) {
-        updateMatch.challengerTurn = true;
-      } else {
-        updateMatch.challengerTurn = false;
-      }
+      const p1BullScore = updateMatch.bullScores.find(
+        (bull) => bull.username === updateMatch.p1.name
+      ).score;
+      const p2BullScore = updateMatch.bullScores.find(
+        (bull) => bull.username === updateMatch.p2.name
+      ).score;
+
+      updateMatch.challengerTurn = p1BullScore > p2BullScore;
 
       const updatedMatch = await updateMatch.save();
-
-      if (opponent) {
-        const user = await UserModel.findOne({ username: opponent });
-        const socket = req.app.get("socketIo");
-        socket.to(user._id.toString()).emit("bull-score", updatedMatch);
-        // socket.emit("bull-score", updatedMatch);
-      }
+      const opponent =
+        username === updateMatch.p1.name
+          ? updateMatch.p2.name
+          : updateMatch.p1.name;
+      const user = await UserModel.findOne({ username: opponent });
+      const socket = req.app.get("socketIo");
+      socket.to(user._id.toString()).emit("bull-score", updatedMatch);
+      // socket.emit("bull-score", updatedMatch);
 
       return res.json(updatedMatch);
     }
@@ -322,4 +294,5 @@ module.exports = {
   updateDouble,
   updateMatchFinish,
   updateBullScore,
+  updateBullScoreApi,
 };

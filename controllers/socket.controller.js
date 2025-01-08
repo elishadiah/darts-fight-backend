@@ -8,6 +8,7 @@ const {
   createMatch,
   updateMatchScore,
   updateMatchFinish,
+  updateBullScore,
 } = require("../controllers/score.controller.js");
 const { updateAchievements } = require("../controllers/result.controller.js");
 const crypto = require("crypto");
@@ -303,6 +304,16 @@ const socketController = async (socket, socketIO, app) => {
       }
     }
   );
+
+  socket.on("bull-score", async ({ score, username, opponentId, token }) => {
+    try {
+      const updatedMatch = await updateBullScore(token, score, username);
+      socket.emit("bull-score-response", updatedMatch);
+      socket.to(opponentId).emit("bull-score-response", updatedMatch);
+    } catch (err) {
+      console.log("bull-score--err->>", err);
+    }
+  });
 
   socket.on("match-finish", async ({ token, opponentId }) => {
     updateMatchFinish(token);
