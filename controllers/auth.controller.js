@@ -670,6 +670,34 @@ const buyBalance = async (req, res) => {
   }
 };
 
+const adminUpdateBalance = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { balance } = req.body;
+    const user = await UserModel.findById(id);
+    if (!user) return res.status(404).send("User not found");
+
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      user._id,
+      {
+        customBalance: balance || 0,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    res.status(200).send({
+      msg: "Balance updated successfully.",
+      value: updatedUser.customBalance,
+    });
+  } catch (error) {
+    res.status(422).json(error);
+    console.log(error);
+  }
+};
+
 const updateBalance = async (req, res) => {
   try {
     const { id } = req.params;
@@ -811,4 +839,5 @@ module.exports = {
   updateXPAndRank,
   updateUserXPAndRank,
   updateSkillLvl,
+  adminUpdateBalance,
 };

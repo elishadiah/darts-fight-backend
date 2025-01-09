@@ -24,6 +24,7 @@ const {
   updateBalance,
   updateUserXPAndRank,
   updateSkillLvl,
+  adminUpdateBalance,
 } = require("../controllers/auth.controller.js");
 
 const router = express.Router();
@@ -49,6 +50,7 @@ router.get('/get-global-coin', getGlobalCoin);
 router.post('/update-global-coin', updateGlobalCoin);
 router.post('/buy-balance/:id', buyBalance);
 router.post('/update-balance/:id', updateBalance);
+router.post('/admin-update-balance/:id', adminUpdateBalance);
 router.get('/get-balance/:id', getBalance);
 router.post('/update-xp-and-rank', updateUserXPAndRank);
 router.post('/update-skill-lvl', updateSkillLvl)
