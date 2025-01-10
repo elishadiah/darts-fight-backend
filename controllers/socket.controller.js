@@ -206,6 +206,15 @@ const socketController = async (socket, socketIO, app) => {
     }) => {
       try {
         console.log("quick-accept-->>", toId);
+        if (scoringOption === "own") {
+          await createMatch(challenger, opponent, token);
+          const user = await UserModel.findOne({ username: opponent });
+          socket.to(user._id.toString()).emit("quick-own-accept-response", {
+            token,
+            challenger,
+          });
+        }
+
         if (type === "schedule") {
           socket.to(toId).emit("schedule-accept-response", {
             token,
@@ -223,11 +232,6 @@ const socketController = async (socket, socketIO, app) => {
           });
         }
 
-        if (scoringOption === "own") {
-          await createMatch(challenger, opponent, token);
-        }
-
-        // const user = await UserModel.findOne({ username: opponent });
         updateXPAndRank(opponent, 20);
       } catch (err) {
         console.log("quick--accept--error-->>", err);
