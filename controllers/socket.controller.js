@@ -12,7 +12,6 @@ const {
 } = require("../controllers/score.controller.js");
 const { updateAchievements } = require("../controllers/result.controller.js");
 const crypto = require("crypto");
-const cron = require("node-cron");
 
 const addMinutes = (date, minutes) => {
   const dateCopy = new Date(date);

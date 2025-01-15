@@ -140,6 +140,13 @@ const AchievementSchema = new Schema(
   { timestamps: true }
 );
 
+const bullSchema = new Schema({
+  score: Number,
+  username: String,
+  isClosed: Boolean,
+  isWaiting: Boolean,
+});
+
 const playerSchema = new Schema({
   p0: Number,
   p20: Number,
@@ -162,12 +169,8 @@ const playerSchema = new Schema({
   scoreHistory: [scoreHistorySchema],
   initialResult: AchievementSchema,
   updatedResult: AchievementSchema,
+  bull: bullSchema,
   name: String,
-});
-
-const bullSchema = new Schema({
-  score: Number,
-  username: String,
 });
 
 const ScoreSchema = new Schema(
@@ -179,7 +182,6 @@ const ScoreSchema = new Schema(
     isFinished: { type: Boolean, default: false },
     p1: playerSchema,
     p2: playerSchema,
-    bullScores: [bullSchema],
     bullModal: { type: Boolean, default: true },
   },
   { timestamps: true }

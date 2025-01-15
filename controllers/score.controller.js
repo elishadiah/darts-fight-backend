@@ -1,6 +1,7 @@
 const ScoreModel = require("../models/score.model.js");
 const ResultModel = require("../models/result.model.js");
 const UserModel = require("../models/user.model.js");
+const mongoose = require("mongoose");
 
 const getScores = async (req, res) => {
   try {
@@ -20,7 +21,6 @@ const createMatch = async (challenger, opponent, token) => {
 
     await ScoreModel.create({
       token,
-      bullScores: [],
       p1: {
         name: challenger,
         currentScore: 501,
@@ -40,6 +40,11 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
+        bull: {
+          score: 0,
+          isClosed: false,
+          isWaiting: false,
+        },
         initialResult: { ...player1Result },
       },
       p2: {
@@ -61,6 +66,11 @@ const createMatch = async (challenger, opponent, token) => {
         legs: 0,
         legs_won: 0,
         match_avg: 0,
+        bull: {
+          score: 0,
+          isClosed: false,
+          isWaiting: true,
+        },
         initialResult: { ...player2Result },
       },
     });
@@ -134,12 +144,8 @@ const updateMatchScore = async (token, score, user) => {
       };
       match.legNo = match.legNo + 1;
 
-      const p1BullScore = match.bullScores.find(
-        (bull) => bull.username === match.p1.name
-      ).score;
-      const p2BullScore = match.bullScores.find(
-        (bull) => bull.username === match.p2.name
-      ).score;
+      const p1BullScore = match.p1.bull.score;
+      const p2BullScore = match.p2.bull.score;
 
       const legTurnOrder = [true, false, true, false, true];
       match.challengerTurn =
@@ -205,7 +211,7 @@ const updateDouble = async (req, res) => {
     const updateMatch = await match.save();
     res.json(updateMatch);
   } catch (err) {
-    console.log("update-match-err->", err);
+    console.log("update-double-err->", err);
     res.status(500).json({ message: err.message });
     throw err;
   }
@@ -219,21 +225,24 @@ const updateBullScore = async (token, score, username) => {
       throw new Error("Match not found");
     }
 
-    match.bullScores.push({ score, username });
-    const updateMatch = await match.save();
+    if (match.p1.name === username) {
+      match.p1.bull.score = score;
+      match.p1.bull.isWaiting = true;
+      match.p2.bull.isWaiting = false;
+    } else if (match.p2.name === username) {
+      match.p2.bull.score = score;
+      match.p2.bull.isWaiting = false;
+      match.p2.bull.isClosed = true;
+      match.p1.bull.isWaiting = false;
+      match.p1.bull.isClosed = true;
 
-    if (updateMatch.bullScores.length === 2) {
-      updateMatch.bullModal = false;
-      const p1BullScore = updateMatch.bullScores.find(
-        (bull) => bull.username === updateMatch.p1.name
-      ).score;
-      const p2BullScore = updateMatch.bullScores.find(
-        (bull) => bull.username === updateMatch.p2.name
-      ).score;
-      updateMatch.challengerTurn = p1BullScore > p2BullScore;
-      const updatedMatch = await updateMatch.save();
-      return updatedMatch;
+      const p1BullScore = match.p1.bull.score;
+      const p2BullScore = match.p2.bull.score;
+
+      match.challengerTurn = p1BullScore > p2BullScore;
     }
+
+    const updateMatch = await match.save();
 
     return updateMatch;
   } catch (err) {
