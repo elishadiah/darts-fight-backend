@@ -204,14 +204,13 @@ const socketController = async (socket, socketIO, app) => {
       type,
     }) => {
       try {
-        console.log("quick-accept-->>", toId);
         if (scoringOption === "own") {
           await createMatch(challenger, opponent, token);
-          const user = await UserModel.findOne({ username: opponent });
-          socket.to(user._id.toString()).emit("quick-own-accept-response", {
-            token,
-            challenger,
-          });
+          // const user = await UserModel.findOne({ username: opponent });
+          // socket.to(user._id.toString()).emit("quick-own-accept-response", {
+          //   token,
+          //   challenger,
+          // });
         }
 
         if (type === "schedule") {

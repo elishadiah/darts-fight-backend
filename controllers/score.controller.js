@@ -12,6 +12,28 @@ const getScores = async (req, res) => {
   }
 };
 
+const getOpenGamesApi = async (req, res) => {
+  try {
+    const openGames = await ScoreModel.find({ isFinished: false });
+    res.json(openGames);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+const getMyOpenGamesApi = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const openGames = await ScoreModel.find({
+      isFinished: false,
+      $or: [{ "p1.name": username }, { "p2.name": username }],
+    });
+    res.json(openGames);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const createMatch = async (challenger, opponent, token) => {
   try {
     const [player1Result, player2Result] = await Promise.all([
@@ -304,4 +326,6 @@ module.exports = {
   updateMatchFinish,
   updateBullScore,
   updateBullScoreApi,
+  getOpenGamesApi,
+  getMyOpenGamesApi,
 };
