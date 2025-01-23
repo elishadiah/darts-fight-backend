@@ -9,6 +9,7 @@ const {
   updateMatchScore,
   updateMatchFinish,
   updateBullScore,
+  undoLastScore,
 } = require("../controllers/score.controller.js");
 const { updateAchievements } = require("../controllers/result.controller.js");
 const crypto = require("crypto");
@@ -283,9 +284,39 @@ const socketController = async (socket, socketIO, app) => {
 
   socket.on(
     "score-update",
-    async ({ score, user, userId, opponent, opponentId, token }) => {
+    async ({
+      score,
+      missed,
+      thrown,
+      toFinish,
+      user,
+      isUndo,
+      userId,
+      opponent,
+      opponentId,
+      token,
+    }) => {
       try {
-        const updatedMatch = await updateMatchScore(token, score, user);
+        let updatedMatch;
+        if (isUndo) {
+          updatedMatch = await undoLastScore(
+            token,
+            user,
+            score,
+            missed,
+            toFinish,
+            thrown
+          );
+        } else {
+          updatedMatch = await updateMatchScore(
+            token,
+            score,
+            missed,
+            thrown,
+            toFinish,
+            user
+          );
+        }
 
         if (
           updatedMatch.legNo > 5 ||

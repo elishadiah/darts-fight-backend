@@ -3,6 +3,20 @@ const ResultModel = require("../models/result.model.js");
 const UserModel = require("../models/user.model.js");
 const mongoose = require("mongoose");
 
+const scoreCategories = [
+  { threshold: 180, field: "p180" },
+  { threshold: 171, field: "p171" },
+  { threshold: 160, field: "p160" },
+  { threshold: 140, field: "p140" },
+  { threshold: 100, field: "p100" },
+  { threshold: 80, field: "p80" },
+  { threshold: 60, field: "p60" },
+  { threshold: 40, field: "p40" },
+  { threshold: 26, field: "p26" },
+  { threshold: 20, field: "p20" },
+  { threshold: 0, field: "p0" },
+];
+
 const getScores = async (req, res) => {
   try {
     const scores = await ScoreModel.find();
@@ -103,7 +117,24 @@ const createMatch = async (challenger, opponent, token) => {
   }
 };
 
-const updateMatchScore = async (token, score, user) => {
+const getPlayerAndOpponent = (user, match) => {
+  if (user === match.p1.name) {
+    return { player: match.p1, opponent: match.p2 };
+  } else if (user === match.p2.name) {
+    return { player: match.p2, opponent: match.p1 };
+  } else {
+    throw new Error("Invalid user");
+  }
+};
+
+const updateMatchScore = async (
+  token,
+  score,
+  missed,
+  thrown,
+  toFinish,
+  user
+) => {
   try {
     const match = await ScoreModel.findOne({ token });
 
@@ -111,40 +142,27 @@ const updateMatchScore = async (token, score, user) => {
       throw new Error("Match not found");
     }
 
-    const getPlayerAndOpponent = (user) => {
-      if (user === match.p1.name) {
-        return { player: match.p1, opponent: match.p2 };
-      } else if (user === match.p2.name) {
-        return { player: match.p2, opponent: match.p1 };
-      } else {
-        throw new Error("Invalid user");
-      }
-    };
+    if (user === match.p1.name && !match.p1.bull.isClosed) {
+      throw new Error("Bull not closed");
+    } else if (user === match.p2.name && !match.p2.bull.isClosed) {
+      throw new Error("Bull not closed");
+    }
 
-    const { player, opponent } = getPlayerAndOpponent(user);
+    const { player, opponent } = getPlayerAndOpponent(user, match);
+
     player.currentScore -= score;
 
+
     if (!player.scoreHistory[match.legNo - 1]) {
-      player.scoreHistory[match.legNo - 1] = { scores: [] };
+      player.scoreHistory[match.legNo - 1] = { scores: [], doubleMissed: [] };
     }
     let history = player.scoreHistory[match.legNo - 1].scores;
+    let doubleMissed = player.scoreHistory[match.legNo - 1].doubleMissed;
     history.push(score);
+    doubleMissed.push(missed);
     player.scoreHistory[match.legNo - 1].scores = history;
-    player.darts_thrown = (player.darts_thrown || 0) + 3;
-
-    const scoreCategories = [
-      { threshold: 180, field: "p180" },
-      { threshold: 171, field: "p171" },
-      { threshold: 160, field: "p160" },
-      { threshold: 140, field: "p140" },
-      { threshold: 100, field: "p100" },
-      { threshold: 80, field: "p80" },
-      { threshold: 60, field: "p60" },
-      { threshold: 40, field: "p40" },
-      { threshold: 26, field: "p26" },
-      { threshold: 20, field: "p20" },
-      { threshold: 0, field: "p0" },
-    ];
+    player.scoreHistory[match.legNo - 1].doubleMissed = doubleMissed;
+    player.darts_thrown = (player.darts_thrown || 0) + thrown;
 
     for (const { threshold, field } of scoreCategories) {
       if (score >= threshold) {
@@ -161,8 +179,9 @@ const updateMatchScore = async (token, score, user) => {
       opponent.currentScore = 501;
       player.scoreHistory[match.legNo - 1] = {
         ...player.scoreHistory[match.legNo - 1],
-        to_finish: score,
+        to_finish: toFinish,
         scores: player.scoreHistory[match.legNo - 1].scores,
+        doubleMissed: player.scoreHistory[match.legNo - 1].doubleMissed,
       };
       match.legNo = match.legNo + 1;
 
@@ -317,6 +336,73 @@ const updateBullScoreApi = async (req, res) => {
   }
 };
 
+const undoLastScore = async (token, user, score, missed, toFinish, bust) => {
+  try {
+    const match = await ScoreModel.findOne({ token });
+
+    if (!match) {
+      throw new Error("Match not found");
+    }
+
+    const { player, opponent } = getPlayerAndOpponent(user, match);
+
+    if (!player) {
+      throw new Error("Invalid user");
+    }
+
+    const lastScoreIndex =
+      player.scoreHistory[match.legNo - 1].scores.length - 1;
+    const originLastScore =
+      player.scoreHistory[match.legNo - 1].scores[lastScoreIndex];
+
+    if (originLastScore === 0) {
+      player.darts_thrown =
+        player.darts_thrown - (player.darts_thrown % 3) + bust;
+    } else {
+      player.darts_thrown = player.darts_thrown - 3 + bust;
+    }
+
+    for (const { threshold, field } of scoreCategories) {
+      if (originLastScore >= threshold && player[field] > 0) {
+        player[field] -= 1;
+        break;
+      }
+    }
+    player.scoreHistory[match.legNo - 1].scores[lastScoreIndex] = score;
+    player.scoreHistory[match.legNo - 1].doubleMissed[lastScoreIndex] = missed;
+    player.currentScore = player.currentScore + originLastScore - score;
+
+    if (player.currentScore === 0) {
+      player.currentScore = 501;
+      player.legs_won = (player.legs_won || 0) + 1;
+      opponent.currentScore = 501;
+      player.scoreHistory[match.legNo - 1] = {
+        ...player.scoreHistory[match.legNo - 1],
+        to_finish: toFinish,
+        scores: player.scoreHistory[match.legNo - 1].scores,
+        doubleMissed: player.scoreHistory[match.legNo - 1].doubleMissed,
+      };
+      match.legNo = match.legNo + 1;
+
+      const p1BullScore = match.p1.bull.score;
+      const p2BullScore = match.p2.bull.score;
+
+      const legTurnOrder = [true, false, true, false, true];
+      match.challengerTurn =
+        p1BullScore > p2BullScore
+          ? legTurnOrder[match.legNo - 1]
+          : !legTurnOrder[match.legNo - 1];
+    }
+
+    const updateMatch = await match.save();
+
+    return updateMatch;
+  } catch (err) {
+    console.log("undo-last-score-err->", err);
+    throw err;
+  }
+};
+
 module.exports = {
   getScores,
   createMatch,
@@ -328,4 +414,5 @@ module.exports = {
   updateBullScoreApi,
   getOpenGamesApi,
   getMyOpenGamesApi,
+  undoLastScore,
 };

@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const scoreHistorySchema = new Schema({
   scores: [Number],
+  doubleMissed: [Number],
   to_finish: Number,
 });
 
