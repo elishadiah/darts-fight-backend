@@ -1,6 +1,6 @@
 const ScheduleModel = require("../models/schedule.model");
 
-saveSchedule = async (req, res) => {
+const saveSchedule = async (req, res) => {
   try {
     await ScheduleModel.create({
       date: req.body.date,
@@ -15,7 +15,7 @@ saveSchedule = async (req, res) => {
   }
 };
 
-fetchAllSchedule = async (req, res) => {
+const fetchAllSchedule = async (req, res) => {
   try {
     const schedules = await ScheduleModel.find();
     if (!schedules) res.status(404).json("Schedule not found");
@@ -25,7 +25,7 @@ fetchAllSchedule = async (req, res) => {
   }
 };
 
-removeSchedule = async (req, res) => {
+const removeSchedule = async (req, res) => {
   try {
     await ScheduleModel.findByIdAndDelete(req.body._id);
     res.status(200).json("Delete successfully");
@@ -34,4 +34,17 @@ removeSchedule = async (req, res) => {
   }
 };
 
-module.exports = { saveSchedule, fetchAllSchedule, removeSchedule };
+const deleteSchedulesByToken = async (schedules, token) => {
+  for (const schedule of schedules) {
+    if (schedule.token === token) {
+      await ScheduleModel.findByIdAndDelete(schedule._id);
+    }
+  }
+};
+
+module.exports = {
+  saveSchedule,
+  fetchAllSchedule,
+  removeSchedule,
+  deleteSchedulesByToken,
+};

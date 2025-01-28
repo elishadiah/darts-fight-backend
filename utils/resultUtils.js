@@ -22,6 +22,7 @@ const updateCurrentStreaks = (user, opponent, userInit, opponentInit) => {
         userPreviousWin,
         userInit.seasonCurrentVictoryStreak
       ),
+      previousWin: won,
     },
     opponent: {
       currentVictoryStreak: getCurrentStreak(
@@ -34,6 +35,7 @@ const updateCurrentStreaks = (user, opponent, userInit, opponentInit) => {
         opponentPreviousWin,
         opponentInit.seasonCurrentVictoryStreak
       ),
+      previousWin: !won,
     },
   };
 };
@@ -67,11 +69,11 @@ const updateWinsAndLevel = (
 
   return {
     user: {
-      totalWinNo: won ? userInit.totalWinNo + 1 : userInit.totalWinNo,
+      // totalWinNo: won ? userInit.totalWinNo + 1 : userInit.totalWinNo,
       level: userLevel,
     },
     opponent: {
-      totalWinNo: won ? opponentInit.totalWinNo : opponentInit.totalWinNo + 1,
+      // totalWinNo: won ? opponentInit.totalWinNo : opponentInit.totalWinNo + 1,
       level: opponentLevel,
     },
   };
@@ -250,27 +252,37 @@ const updateDartEnthusiast = (userInit) => {
   };
 };
 
-// export const updateIronDart = (user, opponent, matchResult) => {
-//   const won = user.won > opponent.won;
-//   const doubles =
-//     user?.name?.toLowerCase() === matchResult.p1_name?.toLowerCase()
-//       ? Number(matchResult.p1_doubles)
-//       : Number(matchResult.p2_doubles);
-//   return {
-//     ironDart: {
-//       lifetime: won
-//         ? user.init.ironDart.lifetime < doubles
-//           ? doubles
-//           : user.init.ironDart.lifetime
-//         : user.init.ironDart.lifetime,
-//       season: won
-//         ? user.init.ironDart.season < doubles
-//           ? doubles
-//           : user.init.ironDart.season
-//         : user.init.ironDart.season,
-//     },
-//   };
-// };
+const calcDoubls = (player) => {
+  const darts_thrown_double = player.scoreHistory.doubleMissed.reduce(
+    (acc, sub) => acc + sub,
+    0
+  );
+  const doubles =
+    darts_thrown_double && player.legs_won
+      ? int((player.legs_won / darts_thrown_double) * 10000) / 100
+      : 0;
+  return doubles;
+};
+
+const updateIronDart = (user, opponent, matchResult) => {
+  const won = user.legs_won > opponent.legs_won;
+  const doubles = calcDoubls(user);
+
+  return {
+    ironDart: {
+      lifetime: won
+        ? matchResult.ironDart.lifetime < doubles
+          ? doubles
+          : matchResult.ironDart.lifetime
+        : matchResult.ironDart.lifetime,
+      season: won
+        ? matchResult.ironDart.season < doubles
+          ? doubles
+          : matchResult.ironDart.season
+        : matchResult.ironDart.season,
+    },
+  };
+};
 
 const updateMaxStreaks = (
   updateUser,
@@ -338,11 +350,11 @@ const updateChallengeConqueror = (user, opponent, opponentInit) => {
   return {
     challengeConqueror: {
       lifetime:
-        user.won < opponent.won
+        user.legs_won < opponent.legs_won
           ? Number(opponentInit.challengeConqueror.lifetime) + 1
           : opponentInit.challengeConqueror.lifetime,
       season:
-        user.won < opponent.won
+        user.legs_won < opponent.legs_won
           ? Number(opponentInit.challengeConqueror.season) + 1
           : opponentInit.challengeConqueror.season,
     },
@@ -463,6 +475,7 @@ module.exports = {
   updateChampionChallenger,
   updateReadyForIt,
   updateChallengeConqueror,
+  updateIronDart,
   updateSummary,
   updateConsistentScorer,
   updateMaster26,

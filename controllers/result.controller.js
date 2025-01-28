@@ -1,13 +1,23 @@
-const puppeteer = require("puppeteer");
 const ResultModel = require("../models/result.model");
 const EventModel = require("../models/events.model");
 const SeasonModel = require("../models/season.model");
-const GlobalCoinModel = require("../models/globalCoin.model");
 const UserModel = require("../models/user.model");
 const ScheduleModel = require("../models/schedule.model");
-const CommunityModel = require("../models/community.model");
 const ScoreModel = require("../models/score.model");
 const axios = require("axios");
+const { updateXPAndRank } = require("./auth.controller");
+const { handleAchievement } = require("../utils/achievementsUtils");
+const {
+  findUserResult,
+  combineResultsAndUsers,
+  calculateXP,
+} = require("../utils/utils");
+const { updateSeasonTopMembers } = require("./season.controller");
+const { deleteSchedulesByToken } = require("./schedule.controller");
+const {
+  getPlayerUpdates,
+  getFinalUpdates,
+} = require("../utils/resultAchievementUtils");
 const {
   updateCurrentStreaks,
   updateWinsAndLevel,
@@ -29,141 +39,17 @@ const {
   updateMaster26,
   updateThrowCount,
   updateHighFinish,
+  updateIronDart,
 } = require("../utils/resultUtils");
-const { updateXPAndRank } = require("./auth.controller");
 
-const getSubResult = (req, res) => {
-  const { url } = req.body;
-  console.log("-----SUB--RESULT-----");
-  puppeteer
-    .launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      browserContext: "default",
-      // executablePath: '/usr/bin/chromium-browser'
-    })
-    .then(async (browser) => {
-      const page = await browser.newPage();
-      await page.setRequestInterception(true);
-      page.on("request", (request) => {
-        if (
-          request.resourceType() === "image" ||
-          request.resourceType() === "stylesheet"
-        ) {
-          request.abort();
-        } else {
-          request.continue();
-        }
-      });
-      await page.goto(url, {
-        waitUntil: "load",
-        timeout: 0,
-      });
-
-      let subResult;
-
-      try {
-        await page.waitForSelector(
-          ".card .card-body > div:first-child ~ div > div.d-sm-block > h1"
-        );
-
-        subResult = await page.evaluate(() => {
-          const fruitsList = document.body.querySelectorAll(
-            ".card .card-body > div:first-child ~ div > div.d-sm-block > h1"
-          );
-
-          let fruits = [];
-
-          fruitsList.forEach((value) => {
-            fruits.push(value.innerText);
-          });
-          return fruits;
-        });
-      } catch (e) {
-        console.log("sub-err-->>", e);
-        res.status(500).json(e);
-      }
-
-      console.log("Sub--res--->>>>", subResult);
-
-      res.json({ subResult });
-    })
-    .catch(function (err) {
-      console.log("Sub-Browser-err-->>>>", err);
-    });
-};
-
-// getResult = (req, res) => {
-//   const destUrl = req.body.url;
-//   puppeteer
-//     .launch({
-//       headless: true,
-//       args: ["--no-sandbox", "--disable-setuid-sandbox"],
-//       browserContext: "default",
-//       // executablePath: '/usr/bin/chromium-browser'
-//     })
-//     .then(async (browser) => {
-//       const page = await browser.newPage();
-
-//       await page.setRequestInterception(true);
-//       page.on("request", (request) => {
-//         if (
-//           request.resourceType() === "image" ||
-//           request.resourceType() === "stylesheet"
-//         ) {
-//           request.abort();
-//         } else {
-//           request.continue();
-//         }
-//       });
-
-//       await page.goto(destUrl, { waitUntil: "load", timeout: 0 });
-
-//       let totalResult, allResult, userResult;
-
-//       try {
-//         await page.waitForSelector(
-//           // ".container-fluid div .card .card-body div.col-3 > h3"
-//           ".container-fluid div .card .card-body p, h3"
-//         );
-
-//         totalResult = await page.evaluate(() => {
-//           const fruitsList = document.body.querySelectorAll(
-//             // ".container-fluid div .card .card-body div.col-3 > h3"
-//             ".container-fluid div .card .card-body p, h3"
-//           );
-
-//           let fruits = [];
-
-//           fruitsList.forEach((value) => {
-//             fruits.push(value.innerText);
-//           });
-//           return fruits;
-//         });
-//       } catch (e) {
-//         console.log("total-err-->>", e);
-//         res.status(500).json(e);
-//       }
-
-//       res.json(totalResult);
-
-//       await browser.close();
-//     })
-//     .catch(function (err) {
-//       res.status(500).json(err);
-//       console.log("Browser-err-->>>", err);
-//     });
-// };
-
-const isEmpty = (data) => {
-  if (data.length === 0 || data === null || data === undefined) return true;
-  else return false;
-};
-
-const getResult = async (req, res) => {
+const getLidartsResult = async (req, res) => {
   try {
-    const allResult = await ResultModel.find();
-    const response = await axios.get(req.query.params.url);
+    const { url } = req.query.params;
+    if (!url) {
+      return res.status(400).json({ error: "URL parameter is required" });
+    }
+    const allResults = await ResultModel.find();
+    const response = await axios.get(url);
     const {
       p1_name,
       p2_name,
@@ -176,16 +62,11 @@ const getResult = async (req, res) => {
       end,
     } = response.data;
 
-    const user1InitResult = allResult.find(
-      (val) => val.username.trim().toLowerCase() === p1_name.toLowerCase()
-    );
-
-    const user2InitResult = allResult.find(
-      (val) => val.username.trim().toLowerCase() === p2_name.toLowerCase()
-    );
+    const user1InitResult = findUserResult(allResults, p1_name);
+    const user2InitResult = findUserResult(allResults, p2_name);
 
     if (!user1InitResult || !user2InitResult) {
-      return res.status(404).json("User not found");
+      return res.status(404).json({ error: "User not found" });
     }
 
     const user1 = {
@@ -194,7 +75,6 @@ const getResult = async (req, res) => {
       avg: p1_match_avg,
       init: user1InitResult,
     };
-
     const user2 = {
       name: p2_name,
       won: p2_legs_won,
@@ -207,229 +87,129 @@ const getResult = async (req, res) => {
       user2,
       begin,
       end,
-      allResult,
+      allResults,
       result: JSON.parse(match_json)[1],
       matchResult: response.data,
     });
   } catch (error) {
-    res.status(500).json(error);
+    console.error("Error fetching Lidarts result:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 const fetchResult = async (req, res) => {
   const { username } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
   try {
-    const result = await ResultModel.find();
-    let existResult;
-    if (result) {
-      existResult = result.find((val) =>
-        val?.username?.toLowerCase().includes(username)
-      );
-    } else return res.status(500).json("Could not find result!");
-    if (existResult) res.status(200).json(existResult);
-    else res.status(404).json("There is no result for this user.");
-  } catch (err) {
-    res.status(500).json(err);
+    const results = await ResultModel.find();
+    if (!results) {
+      return res.status(500).json({ error: "Could not find results" });
+    }
+    const userResult = findUserResult(results, username);
+    if (userResult) {
+      return res.status(200).json(userResult);
+    } else {
+      return res.status(404).json({ error: "No result found for this user" });
+    }
+  } catch (error) {
+    console.error("Error fetching result:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-const fetchAllResult = async (req, res) => {
+const fetchAllResults = async (req, res) => {
   try {
-    const result = await ResultModel.find().lean().exec();
-    res.status(200).json(result);
-  } catch (err) {
-    res.status(500).json(err);
+    const results = await ResultModel.find().lean().exec();
+    res.status(200).json(results);
+  } catch (error) {
+    console.error("Error fetching all results:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
+};
+
+const fetchUsersForResults = async (results) => {
+  const usersPromises = results.map((result) =>
+    UserModel.findOne({ username: result.username })
+  );
+  return await Promise.all(usersPromises);
 };
 
 const fetchAllResultsAndUsers = async (req, res) => {
   try {
     const results = await ResultModel.find();
-
-    if (results.length > 0) {
-      const usersPromises = results.map((result) =>
-        UserModel.findOne({ username: result.username })
-      );
-
-      const users = await Promise.all(usersPromises);
-
-      const combinedData = results.map((result, index) => {
-        const user = users[index];
-        return user
-          ? {
-              ...result.toObject(),
-              vAvatar: user.vAvatar,
-              xp: user.xp,
-              dXp: user.dXp,
-            }
-          : result.toObject();
-      });
-
-      res.status(200).json(combinedData);
-    } else {
-      res.status(200).json([]);
+    if (!results) {
+      return res.status(500).json({ error: "Could not find results" });
     }
-  } catch (err) {
-    res.status(500).json(err);
+    const users = await fetchUsersForResults(results);
+    const combinedData = combineResultsAndUsers(results, users);
+    res.status(200).json(combinedData);
+  } catch (error) {
+    console.error("Error fetching results and users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 const adminUpdateResult = async (req, res) => {
-  const { username } = req.body;
+  const { username, level, ...updateFields } = req.body;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
   try {
-    const existResult = await ResultModel.find({ username });
-    if (!existResult) return res.status(404).json("Could not find result!");
-    const newResult = await ResultModel.findOneAndUpdate(
-      {
-        username: req.body.username,
-        email: req.body.email,
-      },
-      {
-        master26: req.body.master26,
-        highFinish: req.body.highFinish,
-        friendlyChallenger: req.body.friendlyChallenger,
-        currentVictoryStreak: req.body.currentVictoryStreak,
-        seasonCurrentVictoryStreak: req.body.seasonCurrentVictoryStreak,
-        maxVictoryStreak: req.body.maxVictoryStreak,
-        seasonMaxVictoryStreak: req.body.seasonMaxVictoryStreak,
-        totalWinNo: req.body.totalWinNo,
-        pyramidClimber: req.body.pyramidClimber,
-        monthlyMaestro: req.body.monthlyMaestro,
-        challengeConqueror: req.body.challengeConqueror,
-        pyramidProtector: req.body.pyramidProtector,
-        legendaryRivalry: req.body.legendaryRivalry,
-        previousWin: req.body.previousWin,
-        ironDart: req.body.ironDart,
-        master180: req.body.master180,
-        consistentScorer: req.body.consistentScorer,
-        grandMaster: req.body.grandMaster,
-        maxMarksman: req.body.maxMarksman,
-        dartEnthusiast: req.body.dartEnthusiast,
-        readyForIt: req.body.readyForIt,
-        championChallenger: req.body.championChallenger,
-        level: req.body.level,
-        date: req.body.date,
-        summary: req.body.summary,
-      },
+    const existingResult = await ResultModel.findOne({ username });
+    if (!existingResult) {
+      return res.status(404).json({ error: "Could not find result!" });
+    }
+    const updatedResult = await ResultModel.findOneAndUpdate(
+      { username },
+      updateFields,
       { new: true, runValidators: true }
     );
-
-    if (req.body.level === 6) {
-      const season = await SeasonModel.findOne().sort({ season: -1 });
-      if (season) {
-        const topMembers = season.topMembers;
-        const index = topMembers.findIndex((val) => val.equals(newResult._id));
-        if (index === -1) {
-          topMembers.push(newResult._id);
-          await SeasonModel.findByIdAndUpdate(season._id, {
-            topMembers,
-          });
-        }
-      }
-    } else {
-      const season = await SeasonModel.findOne().sort({ season: -1 });
-
-      if (season) {
-        const topMembers = season.topMembers;
-        const index = topMembers.findIndex((val) => val.equals(newResult._id));
-        if (index !== -1) {
-          topMembers.splice(index, 1);
-
-          await SeasonModel.findByIdAndUpdate(season._id, {
-            topMembers,
-          });
-        }
-      }
-    }
-
-    res.status(200).json("Success!");
-    console.log("success-->>>");
-  } catch (e) {
-    res.status(422).json(e);
+    await updateSeasonTopMembers(updatedResult, level);
+    res.status(200).json({ message: "Success!" });
+  } catch (error) {
+    console.error("Error updating result:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
 const postResult = async (req, res) => {
   const { data, token, type = "quick" } = req.body;
   const { username } = data;
+  if (!username) {
+    return res.status(400).json({ error: "Username is required" });
+  }
   try {
-    const existResult = await ResultModel.find({ username });
-    if (!existResult) return res.status(404).json("Could not find result!");
-
+    const existingResult = await ResultModel.findOne({ username });
+    if (!existingResult) {
+      return res.status(404).json({ error: "Could not find result!" });
+    }
     const schedules = await ScheduleModel.find({
       $or: [{ receiver: username }, { challenger: username }],
     });
-
-    console.log(
-      "-token-->>",
-      schedules,
-      "-->>>",
-      existResult[0].quickToken,
-      "==type-->>",
-      type
-    );
-
     if (type === "quick" || type === "top-quick") {
-      if (existResult[0].quickToken !== token) {
-        return res.status(400).json("Invalid token!");
+      if (existingResult.quickToken !== token) {
+        return res.status(400).json({ error: "Invalid token!" });
       }
     } else {
-      if (isEmpty(schedules)) {
-        return res.status(400).json("No schedule found!");
+      if (!schedules.length) {
+        return res.status(400).json({ error: "No schedule found!" });
       }
-
-      let isValid = false;
-
-      schedules.forEach(async (schedule) => {
-        if (schedule.token === token) {
-          isValid = true;
-          return;
-        }
-      });
-
+      const isValid = schedules.some((schedule) => schedule.token === token);
       if (!isValid) {
-        return res.status(400).json("Invalid token!");
+        return res.status(400).json({ error: "Invalid token!" });
       }
     }
-
     const newResult = await ResultModel.findOneAndUpdate(
+      { username: data.username, email: data.email },
       {
-        username: data.username,
-        email: data.email,
-      },
-      {
-        master26: data.master26,
-        highFinish: data.highFinish,
-        friendlyChallenger: data.friendlyChallenger,
-        currentVictoryStreak: data.currentVictoryStreak,
-        seasonCurrentVictoryStreak: data.seasonCurrentVictoryStreak,
-        maxVictoryStreak: data.maxVictoryStreak,
-        seasonMaxVictoryStreak: data.seasonMaxVictoryStreak,
-        totalWinNo: data.totalWinNo,
-        pyramidClimber: data.pyramidClimber,
-        monthlyMaestro: data.monthlyMaestro,
-        challengeConqueror: data.challengeConqueror,
-        pyramidProtector: data.pyramidProtector,
-        legendaryRivalry: data.legendaryRivalry,
-        previousWin: data.previousWin,
-        ironDart: data.ironDart,
-        master180: data.master180,
-        consistentScorer: data.consistentScorer,
-        grandMaster: data.grandMaster,
-        maxMarksman: data.maxMarksman,
-        dartEnthusiast: data.dartEnthusiast,
-        readyForIt: data.readyForIt,
-        throwCount: data.throwCount,
-        championChallenger: data.championChallenger,
-        level: type === "quick" ? data.level : existResult[0].level,
-        date: data.date,
-        summary: data.summary,
-        isCheckout: data.isCheckout,
+        ...data,
+        level: type === "quick" ? data.level : existingResult.level,
         active: true,
       },
       { new: true, runValidators: true }
     );
-
     await EventModel.create({
       eventType: "match",
       user: data.username,
@@ -441,93 +221,52 @@ const postResult = async (req, res) => {
         achievements: data.earnedAchievements,
       },
     });
-
     if (type === "quick") {
-      if (data.level === 6) {
-        const season = await SeasonModel.findOne().sort({ season: -1 });
-        if (season) {
-          const topMembers = season.topMembers;
-          const index = topMembers.findIndex((val) =>
-            val.equals(newResult._id)
-          );
-          if (index === -1) {
-            topMembers.push(newResult._id);
-            await SeasonModel.findByIdAndUpdate(season._id, {
-              topMembers,
-            });
-          }
-        }
-      } else {
-        const season = await SeasonModel.findOne().sort({ season: -1 });
-
-        if (season) {
-          const topMembers = season.topMembers;
-          const index = topMembers.findIndex((val) =>
-            val.equals(newResult._id)
-          );
-          if (index !== -1) {
-            topMembers.splice(index, 1);
-
-            await SeasonModel.findByIdAndUpdate(season._id, {
-              topMembers,
-            });
-          }
-        }
-      }
+      await updateSeasonTopMembers(newResult, data.level);
     }
-
     if (type === "schedule") {
-      schedules.forEach(async (schedule) => {
-        if (schedule.token === token)
-          await ScheduleModel.findByIdAndDelete(schedule._id);
-      });
+      await deleteSchedulesByToken(schedules, token);
     }
-
-    res.status(200).json("Success!");
-    console.log("success");
-  } catch (e) {
-    res.status(422).json(e);
+    res.status(200).json({ message: "Success!" });
+  } catch (error) {
+    rconsole.error("Error posting result:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
-
-  console.log("Result-Req-->>", req.body);
 };
 
 const finishMatchAPI = async (req, res) => {
-  try {
-    const { token } = req.body;
-    const score = await ScoreModel.findOne({ token });
-
-    if (!score) {
-      return res.status(404).json("Score not found!");
-    }
-
-    score.isFinished = true;
-
-    await score.save();
-
-    await updateAchievements(score);
-
-    res.status(200).json({ message: "Match finished successfully!" });
-  } catch (err) {
-    console.log(err);
-    res.status(422).json(err);
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
   }
+  try {
+    const score = await ScoreModel.findOne({ token });
+    if (!score) {
+      return res.status(404).json({ error: "Score not found!" });
+    }
+    score.isFinished = true;
+    await score.save();
+    await updateAchievements(score);
+    res.status(200).json({ message: "Match finished successfully!" });
+  } catch (error) {
+    console.error("Error finishing match:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+const calculateRowSpotNo = async (level) => {
+  const availablePositionNo = Math.pow(2, 7 - level);
+  const currentAbovePlayersNo = await ResultModel.countDocuments({
+    level: level + 1,
+  });
+  return availablePositionNo - currentAbovePlayersNo;
 };
 
 const updateAchievements = async (data) => {
   try {
-    const player1Result = await ResultModel.findOne({ username: data.p1.name });
-    const player2Result = await ResultModel.findOne({ username: data.p2.name });
-
-    if (!player1Result || !player2Result) {
-      throw new Error("Player results not found");
-    }
-
-    const availablePositionNo = Math.pow(2, 7 - player1Result.level);
-    const currentAbovePlayersNo = await ResultModel.countDocuments({
-      level: player1Result.level + 1,
-    });
-    const rowSpotNo = availablePositionNo - currentAbovePlayersNo;
+    const player1Result = data.p1.initialResult;
+    const player2Result = data.p2.initialResult;
+    const rowSpotNo = calculateRowSpotNo(player1Result.level);
 
     const { user: player1Streaks, opponent: player2Streaks } =
       updateCurrentStreaks(data.p1, data.p2, player1Result, player2Result);
@@ -567,6 +306,7 @@ const updateAchievements = async (data) => {
           ...updateMaster26(data.p1, player1Result),
           ...updateThrowCount(data.p1, player1Result),
           ...updateHighFinish(data.p1, player1Result),
+          ...updateIronDart(data.p1, data.p2, player1Result),
         },
         { new: true }
       ),
@@ -586,6 +326,7 @@ const updateAchievements = async (data) => {
           ...updateMaster26(data.p2, player2Result),
           ...updateThrowCount(data.p2, player2Result),
           ...updateHighFinish(data.p2, player2Result),
+          ...updateIronDart(data.p2, data.p1, player1Result),
         },
         { new: true }
       ),
@@ -619,33 +360,71 @@ const updateAchievements = async (data) => {
     await ScoreModel.findOneAndUpdate(
       { token: data.token },
       {
-        // "p1.initialResult": {...player1Result},
-        "p1.updatedResult": { ...finalUser },
-        // "p2.initialResult": {...player2Result},
-        "p2.updatedResult": { ...finalOpponent },
+        "p1.updatedResult": finalUser,
+        "p2.updatedResult": finalOpponent,
       }
     );
+    const earnedAchievement1 = handleAchievement(
+      finalUser,
+      player1Result,
+      data.p1.scoreHistory
+    );
+    const earnedAchievement2 = handleAchievement(
+      finalOpponent,
+      player2Result,
+      data.p2.scoreHistory
+    );
 
-    await EventModel.create({
-      eventType: "match",
-      user: data.p1.name,
-      targetUser: data.p2.name,
-      match: {
-        link: `/result/${data.token}/quick`,
-        user1Won: data.p1.legs_won,
-        user2Won: data.p2.legs_won,
-        // achievements: data.earnedAchievements,
-      },
-    });
+    await createMatchEvent(data, earnedAchievement1, earnedAchievement2);
 
-    // await Promise.all([
-    //   updateXPAndRank(data.p1.name, ),
-    // ])
+    const xpToAdd1 = calculateXP(
+      finalUser.previousWin,
+      earnedAchievement1.length
+    );
+    const xpToAdd2 = calculateXP(
+      finalOpponent.previousWin,
+      earnedAchievement2.length
+    );
+
+    await Promise.all([
+      updateXPAndRank(data.p1.name, xpToAdd1),
+      updateXPAndRank(data.p2.name, xpToAdd2),
+    ]);
 
     console.log("Updated Achievements: success");
   } catch (err) {
     console.log("update-achievements-err-->>>", err);
   }
+};
+
+const createMatchEvent = async (
+  data,
+  earnedAchievement1,
+  earnedAchievement2
+) => {
+  await EventModel.create({
+    eventType: "match",
+    user: data.p1.name,
+    targetUser: data.p2.name,
+    match: {
+      link: `/result/${data.token}/quick`,
+      user1Won: data.p1.legs_won,
+      user2Won: data.p2.legs_won,
+      achievements: earnedAchievement1,
+    },
+  });
+
+  await EventModel.create({
+    eventType: "match",
+    user: data.p2.name,
+    targetUser: data.p1.name,
+    match: {
+      link: `/result/${data.token}/quick`,
+      user1Won: data.p2.legs_won,
+      user2Won: data.p1.legs_won,
+      achievements: earnedAchievement2,
+    },
+  });
 };
 
 const inactiveUser = async (req, res) => {
@@ -790,9 +569,8 @@ const migrateField = async (req, res) => {
 };
 
 module.exports = {
-  getResult,
+  getLidartsResult,
   postResult,
-  getSubResult,
   fetchResult,
   fetchAllResult,
   addField,

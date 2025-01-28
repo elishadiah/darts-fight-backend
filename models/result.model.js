@@ -68,7 +68,7 @@ const ResultSchema = new Schema(
     seasonCurrentVictoryStreak: { type: Number, default: 0 }, // season current streak
     maxVictoryStreak: { type: Number, default: 0 }, // lifetime max streak
     seasonMaxVictoryStreak: { type: Number, default: 0 }, // season max streak
-    totalWinNo: { type: Number, default: 0 },
+    // totalWinNo: { type: Number, default: 0 },
     victoryStreak: {
       type: detailSchema,
       default: () => ({ lifetime: 0, season: 0 }),

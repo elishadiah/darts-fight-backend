@@ -1,10 +1,9 @@
 const express = require("express");
 const {
-  getResult,
+  getLidartsResult,
   postResult,
-  getSubResult,
   fetchResult,
-  fetchAllResult,
+  fetchAllResults,
   addField,
   inactiveUser,
   adminUpdateResult,
@@ -17,11 +16,10 @@ const {
 
 const router = express.Router();
 
-router.post("/detail", getSubResult);
-router.get("/get", getResult);
+router.get("/lidart-get", getLidartsResult);
 router.post('/post', postResult);
 router.post('/fetch', fetchResult);
-router.get('/fetch-all', fetchAllResult);
+router.get('/fetch-all', fetchAllResults);
 router.post('/add-field', addField);
 router.post('/inactive', inactiveUser);
 router.post('/admin-update', adminUpdateResult);

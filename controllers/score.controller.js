@@ -152,7 +152,6 @@ const updateMatchScore = async (
 
     player.currentScore -= score;
 
-
     if (!player.scoreHistory[match.legNo - 1]) {
       player.scoreHistory[match.legNo - 1] = { scores: [], doubleMissed: [] };
     }
@@ -228,33 +227,6 @@ const updateMatchFinish = async (token) => {
     return updatedMath;
   } catch (err) {
     console.log("match-finish-err-->>>", err);
-  }
-};
-
-const updateDouble = async (req, res) => {
-  try {
-    const { token, user, doubles } = req.body;
-
-    const match = await ScoreModel.findOne({ token });
-
-    if (!match) {
-      return res.status(404).json({ message: "Match not found" });
-    }
-
-    const player = user === match.p1.name ? match.p1 : match.p2;
-    if (!player) {
-      return res.status(400).json({ message: "Invalid user" });
-    }
-
-    player.darts_missed_double += Number(doubles.missed);
-    player.darts_thrown_double += Number(doubles.throw);
-
-    const updateMatch = await match.save();
-    res.json(updateMatch);
-  } catch (err) {
-    console.log("update-double-err->", err);
-    res.status(500).json({ message: err.message });
-    throw err;
   }
 };
 
@@ -408,7 +380,6 @@ module.exports = {
   createMatch,
   getMatchStatus,
   updateMatchScore,
-  updateDouble,
   updateMatchFinish,
   updateBullScore,
   updateBullScoreApi,

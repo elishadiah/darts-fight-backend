@@ -2,15 +2,18 @@ const SeasonModel = require("../models/season.model");
 const ResultModel = require("../models/result.model");
 const UserModel = require("../models/user.model");
 
-// const getActiveUsers = async () => {
-//   const thirtyDaysAgo = new Date();
-//   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-//   const activeUsers = await UserModel.countDocuments({
-//     lastLoginDate: { $gte: thirtyDaysAgo },
-//   });
-//   return activeUsers;
-// };
+const updateSeasonTopMembers = async (result, level) => {
+  const season = await SeasonModel.findOne().sort({ season: -1 });
+  if (!season) return;
+  const topMembers = season.topMembers;
+  const index = topMembers.findIndex((val) => val.equals(result._id));
+  if (level === 6 && index === -1) {
+    topMembers.push(result._id);
+  } else if (level !== 6 && index !== -1) {
+    topMembers.splice(index, 1);
+  }
+  await SeasonModel.findByIdAndUpdate(season._id, { topMembers });
+};
 
 const getActiveUsers = async () => {
   const activeUsers = await ResultModel.countDocuments({
@@ -136,4 +139,9 @@ const getAllSeasons = async (req, res) => {
   }
 };
 
-module.exports = { saveSeason, adminSeason, getAllSeasons };
+module.exports = {
+  saveSeason,
+  adminSeason,
+  getAllSeasons,
+  updateSeasonTopMembers,
+};
