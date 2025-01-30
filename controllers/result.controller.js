@@ -15,10 +15,6 @@ const {
 const { updateSeasonTopMembers } = require("./season.controller");
 const { deleteSchedulesByToken } = require("./schedule.controller");
 const {
-  getPlayerUpdates,
-  getFinalUpdates,
-} = require("../utils/resultAchievementUtils");
-const {
   updateCurrentStreaks,
   updateWinsAndLevel,
   updatePyramidClimber,
@@ -375,6 +371,8 @@ const updateAchievements = async (data) => {
       data.p2.scoreHistory
     );
 
+    console.log("Earned Achievements: ", earnedAchievement1, '--->>>', earnedAchievement2);
+
     await createMatchEvent(data, earnedAchievement1, earnedAchievement2);
 
     const xpToAdd1 = calculateXP(
@@ -572,7 +570,7 @@ module.exports = {
   getLidartsResult,
   postResult,
   fetchResult,
-  fetchAllResult,
+  fetchAllResults,
   addField,
   inactiveUser,
   adminUpdateResult,

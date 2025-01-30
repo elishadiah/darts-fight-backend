@@ -324,7 +324,7 @@ const socketController = async (socket, socketIO, app) => {
           updatedMatch.p2.legs_won > 2
         ) {
           const finalMatch = await updateMatchFinish(token);
-          console.log("finalMatch-->>", finalMatch);
+          // console.log("finalMatch-->>", finalMatch);
           updateAchievements(finalMatch);
           socket.to(opponentId).emit("finish-match");
         } else {

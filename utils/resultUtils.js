@@ -253,13 +253,15 @@ const updateDartEnthusiast = (userInit) => {
 };
 
 const calcDoubls = (player) => {
-  const darts_thrown_double = player.scoreHistory.doubleMissed.reduce(
-    (acc, sub) => acc + sub,
-    0
-  );
+  if (!player) return 0;
+  let darts_thrown_double = 0;
+  player.scoreHistory.forEach((item) => {
+    let legDoubleSum = item.doubleMissed.reduce((acc, sub) => acc + sub, 0);
+    darts_thrown_double += legDoubleSum;
+  });
   const doubles =
     darts_thrown_double && player.legs_won
-      ? int((player.legs_won / darts_thrown_double) * 10000) / 100
+      ? ((player.legs_won / darts_thrown_double) * 10000) / 100
       : 0;
   return doubles;
 };

@@ -104,6 +104,14 @@ function findModifiedProperties(obj1, obj2) {
   return modifiedProperties;
 }
 
+const getHighMarks = () => {
+  const highMarks = [170, 167, 164, 161, 160, 158];
+  for (let i = 157; i > 100; i--) {
+    highMarks.push(i);
+  }
+  return highMarks;
+};
+
 const handleAchievement = (updated, origin, scoreHistory) => {
   const achievementData = findModifiedProperties(updated, origin);
   let newAchievements = [];
