@@ -9,6 +9,7 @@ const SeasonRoute = require("./season.route.js");
 const ArenaRoute = require("./arena.route.js");
 const CommunityRoute = require("./community.route.js");
 const ScoreRoute = require("./score.route.js");
+const CoinRoute = require("./coin.route.js");
 
 const router = express.Router();
 
@@ -22,5 +23,6 @@ router.use("/season", SeasonRoute);
 router.use("/arena", ArenaRoute);
 router.use("/community", CommunityRoute);
 router.use("/score", ScoreRoute);
+router.use("/coin", CoinRoute);
 
 module.exports = router;

@@ -252,23 +252,28 @@ const updateDartEnthusiast = (userInit) => {
   };
 };
 
-const calcDoubls = (player) => {
+const calcDoubles = (player) => {
   if (!player) return 0;
-  let darts_thrown_double = 0;
+  let darts_thrown_double = 0, finish_thrown = 0;
   player.scoreHistory.forEach((item) => {
     let legDoubleSum = item.doubleMissed.reduce((acc, sub) => acc + sub, 0);
     darts_thrown_double += legDoubleSum;
+    if (item.hasOwnProperty("to_finish")) {
+      finish_thrown += item.to_finish;
+      darts_thrown_double += item.to_finish;
+    }
   });
   const doubles =
-    darts_thrown_double && player.legs_won
-      ? ((player.legs_won / darts_thrown_double) * 10000) / 100
+    darts_thrown_double && finish_thrown
+      ? ((finish_thrown / (darts_thrown_double)) * 10000) /
+        100
       : 0;
   return doubles;
 };
 
 const updateIronDart = (user, opponent, matchResult) => {
   const won = user.legs_won > opponent.legs_won;
-  const doubles = calcDoubls(user);
+  const doubles = calcDoubles(user);
 
   return {
     ironDart: {
