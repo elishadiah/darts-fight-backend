@@ -10,6 +10,10 @@ const CoinPurchaseSchema = new Schema({
     type: Number,
     required: true,
   },
+  earning: {
+    type: Number,
+    required: true,
+  },
   purchaseDate: {
     type: Date,
     default: Date.now,

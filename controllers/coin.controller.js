@@ -15,8 +15,16 @@ const saveCoinPurchase = async (req, res) => {
 
 const getCoinPurchases = async (req, res) => {
   try {
-    const coins = await CoinModel.find();
-    res.send(coins);
+    const totalCoins = await CoinModel.aggregate([
+      {
+        $group: {
+          _id: "$username",
+          totalCoins: { $sum: "$coinsPurchased" },
+          totalEarning: { $sum: "$earning" },
+        },
+      },
+    ]);
+    res.send(totalCoins);
   } catch (error) {
     res.status(500).send({
       message:
