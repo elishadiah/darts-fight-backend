@@ -21,6 +21,13 @@ const getCoinPurchases = async (req, res) => {
           _id: "$username",
           totalCoins: { $sum: "$coinsPurchased" },
           totalEarning: { $sum: "$earning" },
+          details: {
+            $push: {
+              coinsPurchased: "$coinsPurchased",
+              earning: "$earning",
+              purchaseDate: "$purchaseDate",
+            },
+          },
         },
       },
     ]);
