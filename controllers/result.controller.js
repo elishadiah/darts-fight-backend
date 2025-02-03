@@ -405,7 +405,7 @@ const createMatchEvent = async (
     user: data.p1.name,
     targetUser: data.p2.name,
     match: {
-      link: `/result/${data.token}/quick`,
+      link: `/scoring-result/${data.token}`,
       user1Won: data.p1.legs_won,
       user2Won: data.p2.legs_won,
       achievements: earnedAchievement1,
@@ -417,7 +417,7 @@ const createMatchEvent = async (
     user: data.p2.name,
     targetUser: data.p1.name,
     match: {
-      link: `/result/${data.token}/quick`,
+      link: `/scoring-result/${data.token}`,
       user1Won: data.p2.legs_won,
       user2Won: data.p1.legs_won,
       achievements: earnedAchievement2,
