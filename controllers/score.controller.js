@@ -273,32 +273,20 @@ const updateBullScoreApi = async (req, res) => {
       return res.status(404).json({ message: "Match not found" });
     }
 
-    match.bullScores.push({ score, username });
-    const updateMatch = await match.save();
-
-    if (updateMatch.bullScores.length === 2) {
-      updateMatch.bullModal = false;
-      const p1BullScore = updateMatch.bullScores.find(
-        (bull) => bull.username === updateMatch.p1.name
-      ).score;
-      const p2BullScore = updateMatch.bullScores.find(
-        (bull) => bull.username === updateMatch.p2.name
-      ).score;
-
-      updateMatch.challengerTurn = p1BullScore > p2BullScore;
-
-      const updatedMatch = await updateMatch.save();
-      const opponent =
-        username === updateMatch.p1.name
-          ? updateMatch.p2.name
-          : updateMatch.p1.name;
-      const user = await UserModel.findOne({ username: opponent });
-      const socket = req.app.get("socketIo");
-      socket.to(user._id.toString()).emit("bull-score", updatedMatch);
-      // socket.emit("bull-score", updatedMatch);
-
-      return res.json(updatedMatch);
+    if (match.p1.name === username) {
+      match.p1.bull.score = score;
+      match.p1.bull.isClosed = true;
+    } else if (match.p2.name === username) {
+      match.p2.bull.score = score;
+      match.p2.bull.isClosed = true;
     }
+
+    const p1BullScore = match.p1.bull.score;
+    const p2BullScore = match.p2.bull.score;
+
+    match.challengerTurn = p1BullScore > p2BullScore;
+
+    const updateMatch = await match.save();
 
     res.json(updateMatch);
   } catch (err) {

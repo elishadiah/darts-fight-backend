@@ -14,12 +14,6 @@ const {
 const { updateAchievements } = require("../controllers/result.controller.js");
 const crypto = require("crypto");
 
-const addMinutes = (date, minutes) => {
-  const dateCopy = new Date(date);
-  dateCopy.setMinutes(dateCopy.getMinutes() + minutes);
-  return dateCopy;
-};
-
 const socketController = async (socket, socketIO, app) => {
   // console.log(`⚡: ${socket.username} user just connected!`);
 
@@ -334,6 +328,28 @@ const socketController = async (socket, socketIO, app) => {
         }
       } catch (err) {
         console.log("score-update--err>>", err);
+      }
+    }
+  );
+
+  socket.on("bull-update", async ({ score, username, opponentId }) => {
+    try {
+      socket.to(opponentId).emit("bull-update-response", { score, username });
+    } catch (err) {
+      console.log("bull-update--err->>", err);
+    }
+  });
+
+  socket.on(
+    "bull-challenger-finish",
+    async ({ token, score, username, opponentId }) => {
+      try {
+        const updatedMatch = await updateBullScore(token, score, username);
+        socket
+          .to(opponentId)
+          .emit("bull-challenger-finish-response", updatedMatch);
+      } catch (err) {
+        console.log("bull-challenger-finish--err->>", err);
       }
     }
   );
