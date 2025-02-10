@@ -84,8 +84,6 @@ const scheduleTasks = (socketIO) => {
           { $set: { isProjectMayhemWeek: true } }
         );
 
-        console.log("Project Mayhem Week executed successfully");
-
         // checkout reset
         await ResultModel.updateMany(
           { isCheckout: { $ne: false } },
@@ -107,7 +105,6 @@ const scheduleTasks = (socketIO) => {
     try {
       // Update all users to isFirstLogin: true
       await UserModel.updateMany({}, { $set: { isFirstLogin: true } });
-      console.log("isFirstLogin updated successfully");
 
       // "100 Fights in 24 Hours" Challenge
       const { participants, fightsPerUser, count } = await getFightsDay();
@@ -130,8 +127,6 @@ const scheduleTasks = (socketIO) => {
           { username: maxFightUser._id },
           { $set: { isTheUndergroundChampion: true } }
         );
-
-        console.log("100 Fights in 24 Hours executed successfully");
       }
 
       // seaseon restart if last season is over
@@ -145,8 +140,6 @@ const scheduleTasks = (socketIO) => {
         { updatedAt: { $lt: oneMonthAgo } }, // Filter: selects documents with a date older than one week
         { $set: { active: false } } // Update operation: sets the active field to false
       );
-
-      console.log("inactive documents:", result.modifiedCount);
 
       // down level users after one week
       const documents = await ResultModel.find({
@@ -189,8 +182,6 @@ const scheduleTasks = (socketIO) => {
           );
         }
       }
-
-      console.log("Documents updated successfully");
     } catch (err) {
       console.error("Failed to ping users:", err);
     }
@@ -208,8 +199,6 @@ const scheduleTasks = (socketIO) => {
         { stamina: { $gt: 100 } },
         { $set: { stamina: 100 } }
       );
-
-      console.log("Stamina recovery executed successfully");
     } catch (err) {
       console.error("Failed to recover stamina:", err);
     }

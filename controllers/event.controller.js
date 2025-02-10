@@ -36,8 +36,6 @@ const getEvent = async (req, res) => {
   const eventType = req.query.eventType || [];
   const userName = req.query.userName || "";
 
-  console.log("sortDirection", userName);
-
   let query = {};
 
   if (eventType.length > 0) {
@@ -157,13 +155,8 @@ const getFightsDay = async () => {
         participantsSet.add(targetUser?.toLowerCase())
       );
     });
-    console.log("Fights per day:", participantsSet, "--->>>>", fights);
-
     const fightsPerUserInDay = await fightsPerUser(startOfDay, endOfDay);
-    console.log("Fights per user in day:", fightsPerUserInDay);
-
     const participantsArray = Array.from(participantsSet);
-
     return {
       participants: participantsArray,
       fightsPerUser: fightsPerUserInDay,
@@ -197,13 +190,11 @@ const getFightsWeek = async () => {
         participantsSetWeek.add(targetUser?.toLowerCase())
       );
     });
-    console.log("Fights per week:", participantsSetWeek);
 
     const fightsPerUserInWeek = await fightsPerUser(
       startOfCurrentWeek,
       endOfCurrentWeek
     );
-    console.log("Fights per user in week:", fightsPerUserInWeek);
 
     const participantsArray = Array.from(participantsSetWeek);
 
@@ -219,7 +210,6 @@ const getFightsWeek = async () => {
 
 const fightsPerDay = async (startDate, endDate) => {
   try {
-    // console.log("startDate", startDate);
     const fightsPerDayThisMonth = await EventModel.aggregate([
       {
         $match: {
@@ -255,7 +245,6 @@ const fightsPerDay = async (startDate, endDate) => {
 
 const fightsPerUser = async (startDate, endDate) => {
   try {
-    // console.log("startDate", startDate);
     const fightsPerUser = await EventModel.aggregate([
       {
         $match: {
@@ -280,7 +269,6 @@ const fightsPerUser = async (startDate, endDate) => {
 
 const getWinsPerUser = async (startDate, endDate) => {
   try {
-    // console.log("startDate", startDate);
     const winsPerUser = await EventModel.aggregate([
       {
         $match: {
@@ -326,8 +314,6 @@ const getFightsPerDayInMonth = async (req, res) => {
     );
     const endOfLastWeek = new Date(now.setDate(startOfLastWeek.getDate() + 6));
 
-    console.log("startOfMonth", startOfMonth);
-
     const fightsPerDayThisMonth = await fightsPerDay(startOfMonth, endOfMonth);
     const fightsPerDayLastMonth = await fightsPerDay(
       startOfLastMonth,
@@ -363,7 +349,6 @@ const getTotalFightsApi = async (req, res) => {
     const lastSeason = await SeasonModel.findOne()
       .sort({ seasonStart: -1 })
       .select("seasonStart");
-    console.log(firstSeason, "firstSeason", lastSeason);
 
     const seasonFights = await fightsPerDay(
       new Date(lastSeason.seasonStart),

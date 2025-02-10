@@ -110,8 +110,6 @@ const createMatch = async (challenger, opponent, token) => {
         initialResult: { ...player2Result },
       },
     });
-
-    console.log("Match created successfully");
   } catch (err) {
     console.log("create-match-err->", err);
   }

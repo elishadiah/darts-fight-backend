@@ -86,8 +86,6 @@ const updateXPAndRank = async (username, xpToAdd) => {
   user.xp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
   user.dXp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
 
-  console.log("user.xp-->>>", user.xp, "-->>>", xpToAdd, "-->>", bonus);
-
   let newRank = user.rank;
   for (let i = rankThresholds.length - 1; i >= 0; i--) {
     if (user.xp >= rankThresholds[i]) {
@@ -350,8 +348,6 @@ const changePassword = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   const { profile } = req.body;
-
-  console.log("profile-->>>", profile, req.body);
 
   try {
     if (!req.params.id) return res.status(400).json("There is no ID");

@@ -122,7 +122,7 @@ const playSingleMatch = (player1, player2, firstTurn) => {
       const checkoutSuccess = checkCheckoutSuccess(currentPlayer);
 
       if (checkoutSuccess) {
-        console.log(`${currentPlayer.username} won the match!`);
+        // console.log(`${currentPlayer.username} won the match!`);
         winner = currentPlayer;
         return { winner, player1Scores, player2Scores };
       }
@@ -132,7 +132,7 @@ const playSingleMatch = (player1, player2, firstTurn) => {
   }
 
   winner = applyEdge(challenger, opponent);
-  console.log(`${winner.username} won the match!`);
+  // console.log(`${winner.username} won the match!`);
   return { winner, player1Scores, player2Scores };
 };
 
@@ -158,26 +158,10 @@ const playMatchSeries = async (
     const user1 = await UserModel.findById(player1._id);
     const user2 = await UserModel.findById(player2._id);
 
-    console.log(
-      "Starting match series between",
-      user1.username,
-      "and",
-      user2.username,
-      "-->>",
-      user2.stamina
-    );
-
     user1.stamina -= 10;
     await user1.save();
     user2.stamina -= 10;
     await user2.save();
-
-    console.log(
-      "Match series started between",
-      player1.username,
-      "and",
-      player2.username
-    );
 
     let player1Wins = 0;
     let player2Wins = 0;
@@ -208,11 +192,9 @@ const playMatchSeries = async (
       } else {
         player2Wins++;
       }
-      console.log(`${winner.username} won a match!`);
     }
 
     const overallWinner = player1Wins === 3 ? player1 : player2;
-    console.log(`${overallWinner.username} won the series!`);
 
     let message;
 
@@ -341,13 +323,6 @@ const startMatch = async (user, arenaTitle, option, socket, res) => {
       );
       await arena.save();
 
-      console.log(
-        "Match found between",
-        user.username,
-        "and",
-        opponent.username
-      );
-
       if (opponent.stamina < 10 || user.stamina < 10) {
         const arena = await ArenaModel.findOne({ title: arenaTitle });
         arena.idleUsers.push(user._id.toString());
@@ -367,7 +342,6 @@ const startMatch = async (user, arenaTitle, option, socket, res) => {
         return;
       }
     } else {
-      console.log("Idle users found, proceeding with match...");
       await proceedWithMatch(arena, arenaIdlesUsers);
     }
   } catch (err) {
@@ -389,7 +363,6 @@ const socketTest = async (socket) => {
     const randomIndex = Math.floor(Math.random() * users.length);
     users.splice(randomIndex, 1);
 
-    console.log("Starting match for", socket.username);
     socket.broadcast.emit("arena-match-results", randomIndex);
 
     return removeRandomUser(users);
@@ -403,7 +376,6 @@ const startArenaMatch = async (req, res) => {
   try {
     const { title, username } = req.params;
     const { option } = req.body;
-    console.log("Starting match for", username, "in arena", title);
     const arena = await ArenaModel.findOne({ title });
     if (!arena) {
       return res.status(404).json({ message: "Arena not found" });
@@ -457,14 +429,6 @@ const getMatchResultsByTitle = async (req, res) => {
   try {
     const { title } = req.params;
     const { page = 1, limit = 6, username = "" } = req.query;
-    console.log(
-      "Getting match results for",
-      title,
-      "-->>",
-      page,
-      limit,
-      username
-    );
 
     const arena = await ArenaModel.findOne({ title });
 

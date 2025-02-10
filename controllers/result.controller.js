@@ -371,8 +371,6 @@ const updateAchievements = async (data) => {
       data.p2.scoreHistory
     );
 
-    console.log("Earned Achievements: ", earnedAchievement1, '--->>>', earnedAchievement2);
-
     await createMatchEvent(data, earnedAchievement1, earnedAchievement2);
 
     const xpToAdd1 = calculateXP(
