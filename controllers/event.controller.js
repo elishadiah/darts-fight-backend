@@ -1,6 +1,7 @@
 const EventModel = require("../models/events.model.js");
 const UserModel = require("../models/user.model.js");
 const ResultModel = require("../models/result.model.js");
+const SeasonModel = require("../models/season.model.js");
 
 const postEvent = async (req, res) => {
   try {
@@ -353,6 +354,33 @@ const getFightsPerDayInMonth = async (req, res) => {
   }
 };
 
+// total fights for one season
+const getTotalFightsApi = async (req, res) => {
+  try {
+    const firstSeason = await SeasonModel.findOne()
+      .sort({ seasonStart: 1 })
+      .select("seasonStart");
+    const lastSeason = await SeasonModel.findOne()
+      .sort({ seasonStart: -1 })
+      .select("seasonStart");
+    console.log(firstSeason, "firstSeason", lastSeason);
+
+    const seasonFights = await fightsPerDay(
+      new Date(lastSeason.seasonStart),
+      new Date()
+    );
+    const lifetimeFights = await fightsPerDay(
+      new Date(firstSeason.seasonStart),
+      new Date()
+    );
+
+    res.status(200).json({ seasonFights, lifetimeFights });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 // "100 Fights in 24 Hours" Challenge
 const getFightsDayApi = async (req, res) => {
   try {
@@ -484,4 +512,5 @@ module.exports = {
   getFightsDayApi,
   getFightsWeekApi,
   getWinsPerUserAPI,
+  getTotalFightsApi,
 };
