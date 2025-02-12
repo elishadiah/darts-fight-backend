@@ -361,6 +361,24 @@ const undoLastScore = async (token, user, score, missed, toFinish, bust) => {
   }
 };
 
+const undoLastScoreApi = async (req, res) => {
+  const { token, user, score, missed, toFinish, bust } = req.body;
+
+  try {
+    const updatedMatch = await undoLastScore(
+      token,
+      user,
+      score,
+      missed,
+      toFinish,
+      bust
+    );
+    res.json(updatedMatch);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getScores,
   createMatch,
@@ -372,4 +390,5 @@ module.exports = {
   getOpenGamesApi,
   getMyOpenGamesApi,
   undoLastScore,
+  undoLastScoreApi,
 };

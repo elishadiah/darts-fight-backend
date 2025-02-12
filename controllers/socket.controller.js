@@ -322,6 +322,9 @@ const socketController = async (socket, socketIO, app) => {
           updateAchievements(finalMatch);
           socket.to(opponentId).emit("finish-match");
         } else {
+          socket.emit("score-update-response", {
+            updatedMatch,
+          });
           socket.to(opponentId).emit("score-update-response", {
             updatedMatch,
           });
