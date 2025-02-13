@@ -382,15 +382,8 @@ const updateSummary = (date, user, userUpdate, userInit) => {
 
   return {
     summary: userInit.summary.concat({
-      //   doubles:
-      //     user?.name?.toLowerCase() === matchResult.p1_name?.toLowerCase()
-      //       ? matchResult?.p1_doubles
-      //       : matchResult?.p2_doubles,
+      doubles: calcDoubles(user),
       master180: user.p180,
-      //   first9Avg:
-      //     user?.name?.toLowerCase() === matchResult.p1_name?.toLowerCase()
-      //       ? matchResult?.p1_first9_avg
-      //       : matchResult?.p2_first9_avg,
       matchAvg: calculateAverage(user.scoreHistory).matchAvg,
       level: userUpdate.level,
       date: new Date(date),
