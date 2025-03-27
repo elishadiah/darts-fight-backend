@@ -22,7 +22,7 @@ const updateXPAndRank = async (username, xpToAdd) => {
   const result = await ResultModel.findOne({ username: user.username });
   if (!result) throw new Error("Result not found");
 
-  const bonus = ((user.vAvatar.ranks - 1) * 7 + user.vAvatar.subLvl) * 0.1;
+  const bonus = ((user.vAvatar.ranks - 1) * 7 + user.vAvatar.subLvl || 1) * 0.1;
   const checkoutBonus = result.isCheckout ? 0.1 : 0;
   user.xp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
   user.dXp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
