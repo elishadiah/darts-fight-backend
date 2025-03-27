@@ -11,6 +11,10 @@ const VirtualAvatarSchema = new Schema(
       type: Number,
       required: true,
     },
+    subLvl: {
+      type: Number,
+      required: true,
+    },
     xp: {
       type: Number,
       required: true,
@@ -156,11 +160,12 @@ const UserSchema = new Schema(
       required: false,
       default: () => ({
         title: "",
-        ranks: 0,
+        ranks: 1,
+        subLvl: 1,
         xp: 0,
         img: "",
-        scoring: 20,
-        checkout: 0.2,
+        scoring: 10,
+        checkout: 0.1,
         edge: 0,
         bullseye: 0.1,
         isLocked: false,

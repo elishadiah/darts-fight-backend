@@ -204,7 +204,7 @@ const playMatchSeries = async (
       } won ${player1Wins} : ${player2Wins} in the Fight against ${
         player2.username
       } in the Sparring Arena. ${player1.username} gets ${
-        1 + user1.vAvatar.ranks
+        1 + user1.rank
       } XP.`;
     } else {
       message = `${
@@ -212,7 +212,7 @@ const playMatchSeries = async (
       } won ${player2Wins} : ${player1Wins} in the Fight against ${
         player1.username
       } in the Sparring Arena. ${player2.username} gets ${
-        1 + user2.vAvatar.ranks
+        1 + user2.rank
       } XP.`;
     }
 
@@ -261,16 +261,16 @@ const playMatchSeries = async (
 
     if (overallWinner.username === player1.username) {
       user1.isArena = true;
-      user1.xp += 1 + user1.vAvatar.ranks;
-      user1.dXp += 1 + user1.vAvatar.ranks;
+      user1.xp += 1 + user1.rank;
+      user1.dXp += 1 + user1.rank;
       user2.isArena = false;
       await user1.save();
       await user2.save();
     } else {
       user1.isArena = false;
       user2.isArena = true;
-      user2.xp += 1 + user2.vAvatar.ranks;
-      user2.dXp += 1 + user2.vAvatar.ranks;
+      user2.xp += 1 + user2.rank;
+      user2.dXp += 1 + user2.rank;
       await user1.save();
       await user2.save();
     }

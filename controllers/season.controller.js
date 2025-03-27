@@ -62,6 +62,19 @@ async function resetSeasonProperties() {
       {
         $set: {
           defaultBalance: 6,
+          vAvatar: {
+            title: "",
+            ranks: 1,
+            subLvl: 1,
+            xp: 0,
+            img: "",
+            scoring: 10,
+            checkout: 0.1,
+            edge: 0,
+            bullseye: 0.1,
+            isLocked: false,
+            isSelected: true,
+          },
         },
       }
     );

@@ -7,72 +7,13 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { sendEmailNotification } = require("../email.js");
+const {
+  generateAvatars,
+  generateRankThresholds,
+} = require("../utils/authUtils.js");
 
-const rankThresholds = [500, 1500, 3000, 6000, 10000, 15000];
-const rankBonuses = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
-
-const vAvatars = [
-  {
-    title: "Virtual Avatar 01",
-    ranks: 1,
-    xp: 500,
-    img: "RANKAVATAR1",
-    scoring: 30,
-    checkout: 0.5,
-    edge: 0,
-    bullseye: 0.5,
-  },
-  {
-    title: "Virtual Avatar 02",
-    ranks: 2,
-    xp: 1500,
-    img: "RANKAVATAR2",
-    scoring: 50,
-    checkout: 1,
-    edge: 0.5,
-    bullseye: 1,
-  },
-  {
-    title: "Virtual Avatar 03",
-    ranks: 3,
-    xp: 3000,
-    img: "RANKAVATAR3",
-    scoring: 70,
-    checkout: 1.5,
-    edge: 1,
-    bullseye: 1.5,
-  },
-  {
-    title: "Virtual Avatar 04",
-    ranks: 4,
-    xp: 6000,
-    img: "RANKAVATAR4",
-    scoring: 90,
-    checkout: 2,
-    edge: 1.5,
-    bullseye: 2,
-  },
-  {
-    title: "Virtual Avatar 05",
-    ranks: 5,
-    xp: 10000,
-    img: "RANKAVATAR5",
-    scoring: 110,
-    checkout: 2.5,
-    edge: 2,
-    bullseye: 2.5,
-  },
-  {
-    title: "Virtual Avatar 06",
-    ranks: 6,
-    xp: 15000,
-    img: "RANKAVATAR6",
-    scoring: 130,
-    checkout: 3,
-    edge: 2.5,
-    bullseye: 3,
-  },
-];
+const rankThresholds = generateRankThresholds();
+const vAvatars = generateAvatars();
 
 const updateXPAndRank = async (username, xpToAdd) => {
   const user = await UserModel.findOne({ username });
@@ -81,7 +22,7 @@ const updateXPAndRank = async (username, xpToAdd) => {
   const result = await ResultModel.findOne({ username: user.username });
   if (!result) throw new Error("Result not found");
 
-  const bonus = rankBonuses[user.rank] || 0;
+  const bonus = ((user.vAvatar.ranks - 1) * 7 + user.vAvatar.subLvl) * 0.1;
   const checkoutBonus = result.isCheckout ? 0.1 : 0;
   user.xp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
   user.dXp += Number(xpToAdd) * (1 + bonus + checkoutBonus);
