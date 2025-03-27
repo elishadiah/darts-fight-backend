@@ -1,6 +1,9 @@
 const SeasonModel = require("../models/season.model");
 const ResultModel = require("../models/result.model");
 const UserModel = require("../models/user.model");
+const NotificationModel = require("../models/notification.model");
+const ArenaModel = require("../models/arena.model");
+const EventModel = require("../models/events.model");
 
 const updateSeasonTopMembers = async (result, level) => {
   const season = await SeasonModel.findOne().sort({ season: -1 });
@@ -136,9 +139,31 @@ const adminSeason = async (req, res) => {
 
     await resetSeasonProperties();
 
+    await cleanDatabase();
+
     res.status(200).json("Season has been saved successfully!");
   } catch (err) {
     res.status(422).json(err);
+  }
+};
+
+// clean data for notifications, arena, and events (keep event data for last month)
+const cleanDatabase = async () => {
+  try {
+    const currentDate = new Date();
+    const lastMonthDate = new Date(currentDate);
+    lastMonthDate.setMonth(currentDate.getMonth() - 1);
+
+    // Clean up notifications
+    await NotificationModel.deleteMany({});
+
+    // Clean up arena data older than one month
+    await ArenaModel.deleteMany({ createdAt: { $lt: lastMonthDate } });
+
+    // Clean up events older than one month
+    await EventModel.deleteMany({ createdAt: { $lt: lastMonthDate } });
+  } catch (err) {
+    console.error("Error cleaning database:", err);
   }
 };
 
