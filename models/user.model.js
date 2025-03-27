@@ -13,7 +13,6 @@ const VirtualAvatarSchema = new Schema(
     },
     subLvl: {
       type: Number,
-      required: true,
     },
     xp: {
       type: Number,
