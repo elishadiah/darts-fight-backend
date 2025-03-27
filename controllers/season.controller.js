@@ -158,7 +158,15 @@ const cleanDatabase = async () => {
     await NotificationModel.deleteMany({});
 
     // Clean up arena data older than one month
-    await ArenaModel.deleteMany({ createdAt: { $lt: lastMonthDate } });
+    await ArenaModel.updateMany(
+      {},
+      {
+        $set: {
+          matchResults: [],
+          idleUsers: "$joinedUsers", // MongoDB aggregation pipeline syntax
+        },
+      }
+    );
 
     // Clean up events older than one month
     await EventModel.deleteMany({ createdAt: { $lt: lastMonthDate } });
